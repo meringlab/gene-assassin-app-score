@@ -1,3 +1,4 @@
+#!/bin/bash
 
 ################ Go to Script/Downloading and creating Data files
 ##### Step 1. Execute the script to download the raw files from ENSEMBL .... You need to change temfile path to whicever path you wouldlike
