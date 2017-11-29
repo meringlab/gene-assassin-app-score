@@ -1,10 +1,25 @@
 #!/usr/bin/python
 import os
-import sys
-import ast
+from intervaltree import IntervalTree
 
 
 import making_guide_files_per_gene_functions as fn_guideinfo
+
+chromosomes = {}
+for exon_location in fn_guideinfo.exon_dict.location_exon_id:
+    region = exon_location.split(":")
+    chr = region[0]
+    if chr not in chromosomes:
+        chromosomes[chr] = IntervalTree()
+    start = int(region[1].split("-")[0])
+    end = int(region[1].split("-")[1]) + 1
+    if start == end:
+        print('cannot put %s %s' % (exon_location, fn_guideinfo.exon_dict.location_exon_id[exon_location]))
+        continue
+    if start > end:
+        print('WARN exon_start > exon_end %s %s' % (exon_location, fn_guideinfo.exon_dict.location_exon_id[exon_location]))
+    chromosomes[chr][start:end] = fn_guideinfo.exon_dict.location_exon_id[exon_location]
+
 
 
 ########## Processing the file funcion
@@ -70,40 +85,29 @@ def making_guide_file_with_info (guide_file_path,guide_file_info_directory):
         except Exception as e:
             log_output = gene_name+ "\t" + str(e) + "\t" + "guide_cutsite18" + "\n"
             log_file_handle.write(log_output)
-            
-    
-    
+            # cannot continue without the cut-site
+            return
+
     ##### Searching for exon_id
-        
+        cutsite = int(guide_cutsite18)
         guide_exon_list = []
-        for exon_location in fn_guideinfo.exon_dict.location_exon_id:
-            exon_chr = exon_location.split(":")[0]
-            exon_start_stop = exon_location.split(":")[1]
-            
-            if guide_chr == exon_chr: ##### 1st step
-                exon_start = float(exon_start_stop.split("-")[0])
-                exon_stop = float(exon_start_stop.split("-")[1])
-                ## Guide should be between exon start/stop
-                if exon_start <= exon_stop:
-                    if float(guide_cutsite18) >= exon_start and float(guide_cutsite18) <= exon_stop:
-                        guide_exon = fn_guideinfo.exon_dict.location_exon_id[exon_location]
-                        guide_exon_list = guide_exon_list + guide_exon
-                    else: ###### 
-                        pass        
-                else:
-                    e = "Exon_start > Exon_stop"
-                    log_output = gene_name + "\t" + str(e) + "\t" + "Exon_id_search_problem" + "\n"
-                    log_file_handle.write(log_output)
-            else:
-                pass
-    
-        ####### If exon list is empty because there is no protein-coding transcript then the gene_id_list would also be empty
-        ######## there are two cases here: one when exon list is empty becaus ethere is no protein coding transcript and also when exon list is not empty there ,
-        #### after overlapping removal it still would contain gene from input file
+        for e in chromosomes[guide_chr][cutsite]:
+            guide_exon_list.extend(e.data)
+
+        ####### If exon list is empty because there is no protein-coding transcript
+        ####### then the gene_id_list would also be empty.
+        ####### There are two cases here: one when exon list is empty because there is no protein coding transcript
+        ####### and also when exon list is not empty there, after overlapping removal it still would contain gene from input file
         
-        ##### there are three cases: 1. Non-protein coding transcript (guide exon list  = 0 )2. Overlapping genes 3. Both  (guide_exon_list_updated = 0)
-        
-        
+        ##### there are three cases:
+        # 1. Non-protein coding transcript (guide exon list  = 0 )
+        # 2. Overlapping genes
+        # 3. Both  (guide_exon_list_updated = 0)
+
+        # NOTE: there's no point in looking at all exons from all genes, than pruning down.
+        # it was only used while prototyping so this should be rewritten to only pick exons
+        # belonging to the input gene.
+
         if len(guide_exon_list) !=0 :                         #### It could belong to case 2 and case 3
             gene_id_list = [fn_guideinfo.exon_dict.exon_gene_info[x]["gene_id"] for x in guide_exon_list]  ###### To detect problem in gene_id
             ######### To remove overlapping genes
@@ -117,7 +121,7 @@ def making_guide_file_with_info (guide_file_path,guide_file_info_directory):
             guide_exon_list_updated = [x for x in guide_exon_list if x not in guide_exon_list_remove]
             gene_id_list_updated = [fn_guideinfo.exon_dict.exon_gene_info[x]["gene_id"] for x in guide_exon_list_updated]
             unique_gene_id = list(set(gene_id_list_updated))
-            
+
             if len(gene_id_list_updated) != 0 :
                 if len(unique_gene_id) !=1 and unique_gene_id[0] != gene_name:
                     e = "Gene_id not match input file after overlapping"
