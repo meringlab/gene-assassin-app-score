@@ -46,9 +46,10 @@ def make_var_dict (variation_file_name,dir_path):
                 
                 if vartiation_type == "SNV":
                     if chr_no not in snv_dict:
-                        snv_dict[chr_no] = {}
-                    snv_dict[chr_no][vartiation_start] = 1
-                    snv_dict[chr_no][vartiation_stop] =  1                 
+                        snv_dict[chr_no] = set()
+                    #although it's a FU SNP, it might have different start/stop positions ?!?
+                    snv_dict[chr_no].add(vartiation_start)
+                    snv_dict[chr_no].add(vartiation_stop)
     else:
     
         print "Error : Variation file path not found"
@@ -560,16 +561,14 @@ def calculate_snp_score(guide_chr_input, guide_cutsite_18_input,snv_dict):
     
     guide_chr = str(guide_chr_input)
     guide_cutsite_18 = str(guide_cutsite_18_input)
-    
-    try:
-        a= snv_dict[guide_chr][guide_cutsite_18]
-        snp_score = 0   ##### "snp found" ##### penalised
 
-    except:
-        snp_score = 2.5  ##### no_snp_so_good
+    if guide_cutsite_18 in snv_dict[guide_chr]:
+        s = 0   ##### "snp found" ##### penalised
+    else:
+        s = 2.5  ##### no_snp_so_good
          
-    return (snp_score)
-    
+    return s
+
     
     
 
