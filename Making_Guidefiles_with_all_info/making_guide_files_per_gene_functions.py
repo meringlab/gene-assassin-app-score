@@ -255,34 +255,14 @@ def test_for_overlapping_exon_guide (exon_list):
 #print extract_exon_features_from_zv10_gtf85 ("ENSDARE00001181680")
 
 
-
-
-def calculate_cutsite18_guide (guide_strand,guide_start,guide_stop) :
-    
+def calculate_cutsite18_guide(guide_strand, guide_start, guide_stop):
     if guide_strand == "+" or guide_strand == "1":
-            
-        guide_start_1 = float(guide_start)
-        guide_stop_1 = float(guide_stop)
-        
-        cut_site_18 = guide_stop_1 -2 
-        
-            
-    if guide_strand == "-" or guide_strand == "-1":
-        
-        guide_start_1 = float(guide_stop)
-        guide_stop_1 = float(guide_start)
-        
-        cut_site_18 = guide_stop_1 + 2
-        
-        
-    return (cut_site_18)
-
-
+        return (float(guide_stop) - 2)
+    return (float(guide_start) + 2)
 
 
 def calculate_cutsite18_dist_fom_exon_cds_start_stop_list (guide_exon,cutsite18) :
-    
-    
+
     if guide_exon in exon_dict.exon_transcript_info:
     
     
