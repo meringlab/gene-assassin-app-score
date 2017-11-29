@@ -1,22 +1,16 @@
 import os
-import sys
-import re
 
-
-parsed_gtf_file_path = "/home/neha/Projects/Christian_Mosimann/Crispr_Project/v85_2017/danio_rerio/v_85/Proesssed_data_files/parsed_Danio_rerio.GRCz10.85.gtf.txt"
+parsed_gtf_file_path = "output/v85_2017/danio_rerio/v_85/Proesssed_data_files/parsed_Danio_rerio.GRCz10.85.gtf.txt"
 
 
 ######### Open
-try :
-    os.path.exists(parsed_gtf_file_path)
-except Exception as e:
-    print e
+if not os.path.exists(parsed_gtf_file_path):
     exit("\t ... parsed gtf file path does not exist %s."% parsed_gtf_file_path)
-    
-    
+
+
 ####### Making output file
 
-base_output_file_path =  "/".join(parsed_gtf_file_path.split("/")[0:-1])
+base_output_file_path = os.path.dirname(parsed_gtf_file_path)
 output_file_name = "transcript_cds_info_" + os.path.basename(parsed_gtf_file_path)
 
 output_file_path = os.path.join(base_output_file_path, output_file_name)
@@ -24,7 +18,6 @@ output_file_path = os.path.join(base_output_file_path, output_file_name)
 
 ############# Processing the file
 
-input_file_handle = open(parsed_gtf_file_path)
 
 
 transcript_exon_info = {}
@@ -32,11 +25,12 @@ transcript_exon_cds_length = {}
 
 
 
+input_file_handle = open(parsed_gtf_file_path)
 for line in input_file_handle:
     
-    l = line.strip("\n").split("\t")
+    l = line.strip().split("\t")
     
-    if l[0]!= "Gene_id":
+    if l[0] != "Gene_id":
         
         gene_id = l[0]; gene_strand = l[2];
         transcript_id = l[4]; total_exons = l[5]

@@ -4,13 +4,10 @@ import gzip
 import re
 
 
-gtf_file_path = "/home/neha/Projects/Christian_Mosimann/Crispr_Project/v85_2017/danio_rerio/v_85/Raw_data_files/Danio_rerio.GRCz10.85.gtf.gz"
+gtf_file_path = "output/v85_2017/danio_rerio/v_85/Raw_data_files/Danio_rerio.GRCz10.85.gtf.gz"
 
 ################################## Making new output file name and directory 
-try :
-    os.path.exists(gtf_file_path)
-except Exception as e:
-    print e
+if not os.path.exists(gtf_file_path):
     exit("\t ... gtf file path does not exist %s."% gtf_file_path)
     
 
@@ -62,7 +59,7 @@ for line in input_file_handle:
         
         
         l = line.strip("\n").split("\t")
-      
+      # example: '4	ensembl_havana	gene	6733	52120	.	-	.	gene_id "ENSDARG00000104632"; gene_version "1"; gene_name "si:ch73-252i11.3"; gene_source "ensembl_havana"; gene_biotype "lincRNA"; havana_gene "OTTDARG00000037780"; havana_gene_version "1";'
             
         gene_feature = l[2]
         chr_no = l[0]; start_position = l[3] ; stop_position = l[4]
@@ -129,7 +126,8 @@ for line in input_file_handle:
                     if transcript_id not in gene_id_transcript_dict[gene_id]:
                         gene_id_transcript_dict[gene_id].append(transcript_id)
                         
-                
+            else:
+                print('found no transcript in ', l[8])
                 #################### Doing exon search
                 
                 

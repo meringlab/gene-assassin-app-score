@@ -1,25 +1,15 @@
 import os
-import sys
-
-
 
 ################ Give the path for parsed_Danio_rerio.GRCz10.85.gtf.txt
 
-
-parsed_gtf_file_path = "/home/neha/Projects/Christian_Mosimann/Crispr_Project/v85_2017/danio_rerio/v_85/Proesssed_data_files/parsed_Danio_rerio.GRCz10.85.gtf.txt"
-
-
+parsed_gtf_file_path = "output/v85_2017/danio_rerio/v_85/Proesssed_data_files/parsed_Danio_rerio.GRCz10.85.gtf.txt"
 
 ################ Processing
 
 
 ######### Open
-try :
-    os.path.exists(parsed_gtf_file_path)
-except Exception as e:
-    print e
+if not os.path.exists(parsed_gtf_file_path):
     exit("\t ... parsed gtf file path does not exist %s."% parsed_gtf_file_path)
-    
     
 
 input_file_handle = open(parsed_gtf_file_path)

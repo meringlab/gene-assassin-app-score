@@ -13,7 +13,7 @@ python ./Download_create_data_files/making_transcript_cds_info_file.py
 
 ########### Make all the necessary dict
 ### # Step 4 Maake a chromosome dict  ####### ##### Give the path for Danio_rerio.GRCz10.dna.toplevel.fa.gz
-python chromosome_sequence_dict.py 
+python chromosome_sequence_dict.py
 
 #### Step 5 Make exon dict
 python exon_dict.py  ######### ################ Give the path for parsed_Danio_rerio.GRCz10.85.gtf.txt
@@ -23,7 +23,7 @@ python exon_dict.py  ######### ################ Give the path for parsed_Danio_r
 #### Give the base path to new folder where danio_rereio with right version;this will store guide with info (output from this step)
 ###### also give the path of where the script is stored sys.path.append
 
-python making_guide_file_per_gene_with_info_d_rereio.py /Users/neha/Desktop/Crispr_dummy/Guide_files/ENSDARG00000079029.guides.txt
+python making_guide_file_per_gene_with_info_d_rereio.py input/ENSDARG00000079029.guides.txt
 
 
 ################ Calculating scores for the guides
@@ -31,5 +31,5 @@ python making_guide_file_per_gene_with_info_d_rereio.py /Users/neha/Desktop/Cris
 #### Give the base path to new folder where danio_rereio with right version;this will store guide with scores (output from this step)
 #### Change the path whereber neccesary
 
-python calculate_scores_guides.py /home/neha/Projects/Christian_Mosimann/Crispr_Project/v85_2017/danio_rerio/v_85/Guide_files_with_information/v0/ENSDARG00000079029_guides_info.txt
+python calculate_scores_guides.py output/v85_2017/danio_rerio/v_85/Guide_files_with_information/v0/ENSDARG00000079029_guides_info.txt
 

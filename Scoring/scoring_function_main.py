@@ -1,9 +1,7 @@
-import os, sys
+import os
 import ast
-import math
 
-sys.path.append("/home/neha/Projects/Christian_Mosimann/Crispr_Project/v85_2017/Crispr_dummy_1/")
-from Script.Universal import universal_function as fn_universal
+from Universal import universal_function as fn_universal
 
 import all_scoring_function as fn_scoring
 
@@ -33,7 +31,7 @@ def calculate_score_guide_main (input_file_path, output_file_path, output_file_d
     output_file_handle.write(output_header)
     
     ######## Processing the file
-    
+
     for line in input_file_handle:
         l = line.strip("\n").split("\t")
         if l[0]!= "Gene_id":
@@ -77,7 +75,7 @@ def calculate_score_guide_main (input_file_path, output_file_path, output_file_d
                     ######## Snp scoring
                     
                     snp_score = fn_scoring.calculate_snp_score(guide_chr,cutsite18,snv_dict)
-                    
+
                     ######### Total scores
                     
                     scoring_list = list((guide_transcripts_prox_CDS_penalty,guide_exons_prox_splicesite_penalty,guide_exon_ranking_score,guide_transcript_covered_score,domain_score,calculated_micrhomology_score,snp_score))
