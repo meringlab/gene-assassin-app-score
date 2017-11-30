@@ -8,6 +8,7 @@ def download_from_url(url_link, downlading_path, species_name, file_category):
     file_name = url_link.split("/")[-1]
     full_path = os.path.join(downlading_path, species_name, file_category)
     destination = os.path.join(full_path, file_name)
+    print('downloading %s to %s' % (url_link, destination))
 
     if not os.path.exists(full_path):
         try:
