@@ -1,50 +1,53 @@
 #!/usr/bin/env python
-import os
 import sys
 import gzip
+import timeit
 
+def load_chromosome_sequence_dict(fasta_filepath):
+    '''
+    TODO replace this with biopython:
 
-##### Give the path for Danio_rerio.GRCz10.dna.toplevel.fa.gz
+    from Bio import SeqIO
+    with gzip.open(fasta_file, "rt") as handle:  # only "r" doesnt work in python 3:
+        chromosome_sequence_dict = SeqIO.to_dict(SeqIO.parse(handle, "fasta"))
 
-chromosome_data_path = "output/v85_2017/danio_rerio/v_85/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz"
+    :param fasta_filepath:
+    :return:
+    '''
+    # chromosome_data_path = "output/v85_2017/danio_rerio/v_85/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz"
 
+    # if not os.path.exists(fasta_filepath):
+    #     exit("\t ... fasta file does not exist %s." % fasta_filepath)
+    start = timeit.default_timer()
 
-################# Processing
+    try:
+        input_file_handle = gzip.open(fasta_filepath, "rb")
+    except:
+        print "failed to read fasta file: ", fasta_filepath, sys.exc_info()[0]
+        raise
 
-if not os.path.exists(chromosome_data_path):
-    exit("\t ... chromosome_data_path does not exist %s."% chromosome_data_path)
-    
+    seq= ""
+    chromosome_sequence_dict = {}
 
+    for line in input_file_handle:
+        if line.startswith(">"):
+            if seq!= "":
+                #print l ,chromosome_name, len(seq)  ####### Good check to see if everything is rightly stored
+                if chromosome_name not in chromosome_sequence_dict:
+                    chromosome_sequence_dict[chromosome_name] = seq
 
-input_file_handle = gzip.open(chromosome_data_path,"rb")
+            seq = ""
 
-seq= ""
-chromosome_sequence_dict = {}
+            l = line.strip("\n").strip(">").split(" ")
+            chromosome_name = l[0]
 
-for line in input_file_handle:
-    
-    if line.startswith(">"):
-        
-        if seq!= "":
-            
-            #print l ,chromosome_name, len(seq)  ####### Good check to see if everything is rightly stored
-            
-            if chromosome_name not in chromosome_sequence_dict:
-                chromosome_sequence_dict[chromosome_name] = seq
-                
-            else:
-                print "found"
-                
-        seq = ""
-        
-        l = line.strip("\n").strip(">").split(" ")
-        chromosome_name = l[0]
-            
-    else:
-        seq = seq + line.strip("\n")
+        else:
+            seq = seq + line.strip("\n")
 
+    chromosome_sequence_dict[chromosome_name] = seq
 
+    stop = timeit.default_timer()
+    print('time to build sequence index %dsec' % (stop - start))
 
-
-chromosome_sequence_dict[chromosome_name] = seq
+    return chromosome_sequence_dict
 
