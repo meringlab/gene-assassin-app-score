@@ -38,7 +38,7 @@ def build_exons_index(exon_dict):
     return chromosomes
 
 
-def making_guide_file_with_info(guide_file_path, guide_file_info_directory, chromosomes, sequence_dist, exon_dict):
+def making_guide_file_with_info(guide_file_path, guide_file_info_directory, chromosomes, sequence_dict, exon_dict):
     ######### Input_file
     guide_file = guide_file_path
 
@@ -161,7 +161,7 @@ def making_guide_file_with_info(guide_file_path, guide_file_info_directory, chro
 
             ###### seq_with_ngg
             guide_seq_with_ngg = fn_guideinfo.get_guide_seq_with_ngg(guide_start, guide_stop, guide_strand, guide_chr,
-                                                                     sequence_dist)
+                                                                     sequence_dict)
 
             ########## Extracting feature
             cds_start_stop_cut_site = fn_guideinfo.calculate_cutsite18_dist_fom_exon_cds_start_stop_for_exon_list_modified(
@@ -172,7 +172,7 @@ def making_guide_file_with_info(guide_file_path, guide_file_info_directory, chro
             if len(guide_exon_list_updated) != 0:
                 microhomology_sequence = fn_guideinfo.generate_seq_for_microhomology_scoring(guide_start, guide_stop,
                                                                                              guide_strand, guide_chr,
-                                                                                             sequence_dist)
+                                                                                             sequence_dict)
                 exon_biotype_list = [exon_dict.exon_id_biotype[x]["biotype"] for x in
                                      guide_exon_list_updated]
             else:
@@ -218,13 +218,13 @@ def prepareOutputDirectory(params):
     return guide_file_info_directory
 
 
-def generate_guides(params, exons_index, sequence_dist, output_directory, exon_dict):
+def generate_guides(params, exons_index, sequence_dict, output_directory, exon_dict):
     start = timeit.default_timer()
     num_processed = 0
     guides_directory = os.path.join('input', params['ensembl_release'], params['species_name'], 'guides')
     for guide_file_path in os.listdir(guides_directory):
         making_guide_file_with_info(os.path.join(guides_directory, guide_file_path), output_directory, exons_index,
-                                    sequence_dist, exon_dict)
+                                    sequence_dict, exon_dict)
         num_processed += 1
         if num_processed % 100 == 0:
             stop = timeit.default_timer()
@@ -254,6 +254,6 @@ if __name__ == "__main__":
     fasta_file_name = os.path.basename(params['DNA_top_level_fa'])
     fasta_file_path = os.path.join('output', params['ensembl_release'], params['species_name'], 'Raw_data_files',
                                    fasta_file_name)
-    sequence_dist = chromosome_sequence_dict.load_chromosome_sequence_dict(fasta_file_path)
+    sequence_dict = chromosome_sequence_dict.load_chromosome_sequence_dict(fasta_file_path)
 
-    generate_guides(params, exons_index, sequence_dist, output_directory, exon_dict)
+    generate_guides(params, exons_index, sequence_dict, output_directory, exon_dict)
