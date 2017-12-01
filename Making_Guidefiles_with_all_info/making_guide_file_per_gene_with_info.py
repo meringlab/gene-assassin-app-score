@@ -91,6 +91,11 @@ def making_guide_file_with_info(guide_file_path, guide_file_info_directory, chro
         guide_seq = l[4]
         guide_offtarget_profile = l[10]
 
+        # this happened for human, chromosome CHR_HSCHR6_MHC_QBL_CTG1 (not in gtf)
+        if guide_chr not in chromosomes:
+            print("WARN unknown chromosome %s, for %s" % (guide_chr, line))
+            continue
+
         ###### Calculate cutsite18
 
         try:
