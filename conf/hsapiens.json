@@ -2,7 +2,7 @@
   "assembly": "GRCh38",
   "ensembl_release": "v_85",
   "species_name": "homo_sapiens",
-  "transcript_cds_file_name": "transcript_cds_info_parsed_Homo_sapiens.GRCh38.85.gtf.gtf.txt",
+  "transcript_cds_file_name": "transcript_cds_info_parsed_Homo_sapiens.GRCh38.85.gtf.txt",
   "variation_file_name": "Homo_sapiens.gvf.gz",
   "base_url_gtf": "ftp://ftp.ensembl.org/pub/release-85/gtf/homo_sapiens/Homo_sapiens.GRCh38.85.gtf.gz",
   "DNA_top_level_fa": "ftp://ftp.ensembl.org/pub/release-85/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.toplevel.fa.gz",
