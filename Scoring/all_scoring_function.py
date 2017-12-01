@@ -56,43 +56,37 @@ def make_var_dict (variation_file_name,dir_path):
     
     
     return (snv_dict)
-    
-    
-def make_transcript_cds_info_dict (transcript_cds_file_name, dir_path):
-                
-    transcript_cds_file_path = search_file_path(transcript_cds_file_name, dir_path)
-    
-    transcript_cds_info = {}
-    if  transcript_cds_file_path != "":
 
-        transcript_cds_input_file_handle = open(transcript_cds_file_path)
-        
-        #transcript_cds_info = {}
+
+def make_transcript_cds_info_dict(transcript_cds_file_name, dir_path):
+    transcript_cds_file_path = search_file_path(transcript_cds_file_name, dir_path)
+    if not transcript_cds_file_path:
+        raise Exception("Error: Transcript CDS file path not found %s" % transcript_cds_file_name)
+
+    transcript_cds_info = {}
+
+    with open(transcript_cds_file_path) as transcript_cds_input_file_handle:
+        transcript_cds_input_file_handle.readline()  # throw away the header
+
         for line in transcript_cds_input_file_handle:
-            
-            l = line.strip("\n").split("\t")
-            
-            transcript_id = l[0]; first_exon_cds = l[1]; last_exon_cds = l[2]
-            cds_start = l[4]; cds_stop = l[5];cds_length = l[-1]; transcript_strand = l[-2]
-            
-            
-            #print transcript_id, first_exon_cds, last_exon_cds, cds_start, cds_stop, cds_length, transcript_strand
-            
-            if l[0]!= "Transcript_id":
-                
-                if transcript_id not in transcript_cds_info:
-                    transcript_cds_info[transcript_id] = {}
-                
-                transcript_cds_info[transcript_id]["cds_start_stop_len"] = [cds_start,cds_stop,cds_length]
-                transcript_cds_info[transcript_id]["cds_first_last_exon_rank"] = [first_exon_cds,last_exon_cds]
-        
-    else:
-        print "Error: Transcript CDS file path not found"
-                
-    return(transcript_cds_info)
-    
-    
-    
+            l = line.strip().split('\t')
+            transcript_id = l[0]
+            first_exon_cds = l[1]
+            last_exon_cds = l[2]
+            cds_start = l[4]
+            cds_stop = l[5]
+            cds_length = l[-1]
+            # transcript_strand = l[-2]
+
+            if transcript_id not in transcript_cds_info:
+                transcript_cds_info[transcript_id] = {}
+
+            transcript_cds_info[transcript_id]["cds_start_stop_len"] = [cds_start, cds_stop, cds_length]
+            transcript_cds_info[transcript_id]["cds_first_last_exon_rank"] = [first_exon_cds, last_exon_cds]
+
+    return transcript_cds_info
+
+
 def make_protein_dict (name_protein_dir, dir_path):
     
     protein_path = search_dir_path (name_protein_dir, dir_path)
