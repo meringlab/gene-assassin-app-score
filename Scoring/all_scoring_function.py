@@ -36,17 +36,18 @@ def make_var_dict (variation_file_path):
     snv_dict = {}
     with open(variation_file_path,"rb") as variation_input_file_handle:
         for line in variation_input_file_handle:
-            if line[0]!= "#":
-                l = line.strip().split('\t')
+            if line[0] == "#":
+                continue
 
-                chr_no = l[0]; vartiation_type = l[2]; vartiation_start = l[3]; vartiation_stop = l[4]; descript = l[-1]
+            l = line.strip().split('\t')
+            chr_no = l[0]; vartiation_type = l[2]; vartiation_start = l[3]; vartiation_stop = l[4]; descript = l[-1]
 
-                if vartiation_type == 'SNV':
-                    if chr_no not in snv_dict:
-                        snv_dict[chr_no] = set()
-                    #although it's a SNP, it might have different start/stop positions ?!?
-                    snv_dict[chr_no].add(vartiation_start)
-                    snv_dict[chr_no].add(vartiation_stop)
+            if vartiation_type == 'SNV':
+                if chr_no not in snv_dict:
+                    snv_dict[chr_no] = set()
+                #although it's a SNP, it might have different start/stop positions ?!?
+                snv_dict[chr_no].add(vartiation_start)
+                snv_dict[chr_no].add(vartiation_stop)
 
     return snv_dict
 
