@@ -164,9 +164,8 @@ if __name__ == "__main__":
 
 
     ###### Protein dict
-    name_protein_dir = "proteins"
-    protein_dir_path = os.path.join('input', ensembl_relase, species)
-    protein_domain_info_dict =  fn_scoring.make_protein_dict (name_protein_dir, protein_dir_path)
+    protein_dir_path = os.path.join('input', ensembl_relase, species, "proteins")
+    protein_domain_info_dict =  fn_scoring.make_protein_dict(protein_dir_path)
 
 
     ###### Variation dict

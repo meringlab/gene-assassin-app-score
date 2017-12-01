@@ -95,50 +95,45 @@ def make_transcript_cds_info_dict(transcript_cds_file_name, dir_path):
     return transcript_cds_info
 
 
-def make_protein_dict (name_protein_dir, dir_path):
-    
-    protein_path = search_dir_path (name_protein_dir, dir_path)
+def make_protein_dict (protein_path):
+    if not os.path.exists(protein_path):
+        raise Exception("Error: Protein dir not found %s" % protein_path)
+
     protein_domain_info_dict = {}
-    
-    if protein_path != "":
-        
-        all_gene_list_domains = os.listdir(protein_path)
-        for input_file in all_gene_list_domains:
-    
-            input_file_path = os.path.join(protein_path, input_file)
-            input_file_handle = open(input_file_path)
-            
+
+    for input_file in os.listdir(protein_path):
+        input_file_path = os.path.join(protein_path, input_file)
+        gene_id = os.path.basename(input_file_path).split('.')[0]
+        domains = {}
+
+        with open(input_file_path) as input_file_handle:
             for line in input_file_handle:
-                
-                l = line.strip("\n").split("\t")
-                if l[0] == '#>P':
-                    gene_id = l[1]
-                ################## To test the presence of domains, if it is not found in dict that means no domains   
-                if not l[0].startswith("#"):
-                    chr_name = l[0]; domain_start = l[1]; domain_stop = l[2]; domain_name = l[4]; domain_id = l[-2]
-                    #print chr_name, domain_start, domain_stop, domain_name, domain_id
-                    if int(domain_start) <= int(domain_stop): 
-                        pass
-                    else:
-                        print "domain_start > domain_stop "
-                    domain_location = chr_name + ":" + domain_start + "-" + domain_stop
-                    domain_id_desc = domain_name + ":" + domain_id
-                    if gene_id not in protein_domain_info_dict:
-                        protein_domain_info_dict[gene_id] = {}
-                        
-                    if domain_location not in protein_domain_info_dict[gene_id]:
-                        protein_domain_info_dict[gene_id][domain_location] = domain_id_desc
-                        
-                        
-    else:
-        print "Error: Protein dir path not found"
-        
-    return (protein_domain_info_dict)
+                if line[0] == "#": # header
+                    continue
+
+                l = line.strip().split('\t')
+                # To test the presence of domains, if it is not found in dict that means no domains
+                chr_name = l[0]
+                domain_start = l[1]
+                domain_stop = l[2]
+                domain_name = l[4]
+                domain_id = l[-2]
+
+                if not int(domain_start) <= int(domain_stop):
+                    print("WARN domain_start > domain_stop ")
+
+                domain_location = chr_name + ":" + domain_start + "-" + domain_stop
+                domain_id_desc = domain_name + ":" + domain_id
+
+                if domain_location not in domains:
+                    domains[domain_location] = domain_id_desc
+                else:
+                    print("WARN duplicate domain location for gene %s: %s" % (gene_id, domain_location))
+        protein_domain_info_dict[gene_id] = domains
+    return protein_domain_info_dict
     
-###################### Genome Context_scores
-
-#######1
-
+# Genome Context_scores
+##1
 def calculate_proximity_to_CDS (transcript_id, cutsite18,transcript_cds_info_dict): ################# if within 10%CDS_start/stop then penalised
     
     transcript_cds_data = transcript_cds_info_dict[transcript_id]["cds_start_stop_len"]
