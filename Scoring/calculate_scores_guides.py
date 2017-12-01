@@ -13,7 +13,7 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
                                protein_domain_info_dict, snv_dict):
     ###### Handling files
     output_file_name = \
-    fn_universal.making_output_log_file_names(input_file_path, output_file_path, output_file_descript)[0]
+        fn_universal.making_output_log_file_names(input_file_path, output_file_path, output_file_descript)[0]
     log_file_name = fn_universal.making_output_log_file_names(input_file_path, output_file_path, output_file_descript)[
         1]
 
@@ -160,10 +160,11 @@ if __name__ == "__main__":
     protein_dir_path = os.path.join('input', ensembl_relase, species, "proteins")
     protein_domain_info_dict = fn_scoring.make_protein_dict(protein_dir_path)
 
-    compressed_variation_filepath = os.path.join('output', ensembl_relase, species, 'Raw_data_files', os.path.basename(params['GVF_file']))
+    compressed_variation_filepath = os.path.join('output', ensembl_relase, species, 'Raw_data_files',
+                                                 os.path.basename(params['GVF_file']))
     variation_filepath = os.path.splitext(compressed_variation_filepath)[0]
-    # snv_dict = fn_scoring.make_var_dict(variation_filepath)
-    snv_dict = {}
+    snv_dict = fn_scoring.make_var_dict(variation_filepath)
+    # snv_dict = {}
 
     stop = timeit.default_timer()
     print('time to prepare for computation %dsec' % (stop - start))
@@ -175,7 +176,8 @@ if __name__ == "__main__":
     for input_file in os.listdir(guides_info_dir):
         input_file_path = os.path.join(guides_info_dir, input_file)
         # input_file_path = os.path.join(guides_info_dir, 'ENSDARG00000079029_guides_info.txt')
-        calculate_score_guide_main (input_file_path, output_file_path, output_file_descript, transcript_cds_info_dict, protein_domain_info_dict,snv_dict)
+        calculate_score_guide_main(input_file_path, output_file_path, output_file_descript, transcript_cds_info_dict,
+                                   protein_domain_info_dict, snv_dict)
         num_processed += 1
         if num_processed % 10 == 0:
             stop = timeit.default_timer()
@@ -183,4 +185,3 @@ if __name__ == "__main__":
 
     stop = timeit.default_timer()
     print('time to compute scores %dsec' % (stop - start))
-
