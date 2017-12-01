@@ -3,6 +3,7 @@ import sys
 import json
 import urllib2
 import shutil
+from subprocess import call
 
 def download_from_url(url_link, downlading_path, species_name, file_category):
     file_name = url_link.split("/")[-1]
@@ -30,6 +31,7 @@ def download_from_url(url_link, downlading_path, species_name, file_category):
     file_handle.close()
 
     print('\t... saved at %s \n' % destination)
+    return destination
 
 
 if __name__ == "__main__":
@@ -42,7 +44,9 @@ if __name__ == "__main__":
     file_category = "Raw_data_files"
 
     download_from_url(params['base_url_gtf'], tempfile_path, params['species_name'], file_category)
-    download_from_url(params['DNA_top_level_fa'], tempfile_path, params['species_name'],  file_category)
+    destination = download_from_url(params['DNA_top_level_fa'], tempfile_path, params['species_name'],  file_category)
+    # reading gzip is much much slower than uncompressing and reading uncompressed:
+    call(["gunzip", destination])
     download_from_url(params['GVF_file'], tempfile_path, params['species_name'], file_category)
 
 #base_url_gtf_1 = "ftp://ftp.ensembl.org/pub/release-90/gtf/danio_rerio/Danio_rerio.GRCz10.90.gtf.gz"

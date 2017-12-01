@@ -56,42 +56,35 @@ def load_chromosome_sequence_dict(fasta_filepath):
 
     return chromosome_sequence_dict
 
-def load_chromosome_sequence_dict_stringio(fasta_filepath):
+def load_chromosome_sequence_dict_from_fasta(fasta_uncompressed_filepath):
     '''
     this doesnt measure any faster than plain string concatenation
 
-    :param fasta_filepath: "output/v_85/danio_rerio/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz"
+    :param fasta_uncompressed_filepath: "output/v_85/danio_rerio/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa"
     :return: dict { chromosome -> dna sequence }
     '''
 
-    # if not os.path.exists(fasta_filepath):
-    #     exit("\t ... fasta file does not exist %s." % fasta_filepath)
+
     start = timeit.default_timer()
-
-    try:
-        input_file_handle = gzip.open(fasta_filepath, "rb")
-    except:
-        print "failed to read fasta file: ", fasta_filepath, sys.exc_info()[0]
-        raise
-
     buffer= StringIO()
     chromosome_sequence_dict = {}
 
-    for line in input_file_handle:
-        if line.startswith(">"):
-            seq = buffer.getvalue()
-            if seq!= "":
-                #print l ,chromosome_name, len(seq)  ####### Good check to see if everything is rightly stored
-                if chromosome_name not in chromosome_sequence_dict:
-                    chromosome_sequence_dict[chromosome_name] = seq
+    with open(fasta_uncompressed_filepath, "r") as input_file_handle:
+        for line in input_file_handle:
+            line = line.strip()
+            if line[0] == '>':
+                seq = buffer.getvalue()
+                if seq!= '':
+                    #print(l, chromosome_name, len(seq))  # test if everything is rightly stored
+                    if chromosome_name not in chromosome_sequence_dict:
+                        chromosome_sequence_dict[chromosome_name] = seq
 
-            buffer = StringIO() # or just .seek(0) .truncate() ?
+                buffer = StringIO() # or just .seek(0) .truncate() ?
 
-            l = line.strip("\n").strip(">").split(" ")
-            chromosome_name = l[0]
-
-        else:
-            buffer.write(line.strip())
+                l = line.strip(">").split(" ")
+                chromosome_name = l[0]
+            else:
+                buffer.write(line)
 
     seq = buffer.getvalue()
     chromosome_sequence_dict[chromosome_name] = seq

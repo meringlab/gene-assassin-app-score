@@ -251,9 +251,10 @@ if __name__ == "__main__":
     exons_index = build_exons_index(exon_dict)
 
     # chromosome_data_path = "output/v85_2017/danio_rerio/v_85/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz"
-    fasta_file_name = os.path.basename(params['DNA_top_level_fa'])
+    compressed_fasta_file_name = os.path.basename(params['DNA_top_level_fa'])
+    fasta_file_name = os.path.splitext(compressed_fasta_file_name)[0]
     fasta_file_path = os.path.join('output', params['ensembl_release'], params['species_name'], 'Raw_data_files',
                                    fasta_file_name)
-    sequence_dict = chromosome_sequence_dict.load_chromosome_sequence_dict(fasta_file_path)
+    sequence_dict = chromosome_sequence_dict.load_chromosome_sequence_dict_from_fasta(fasta_file_path)
 
     generate_guides(params, exons_index, sequence_dict, output_directory, exon_dict)
