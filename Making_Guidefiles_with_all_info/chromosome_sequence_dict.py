@@ -2,19 +2,24 @@
 import sys
 import gzip
 import timeit
+from Bio import SeqIO
+from cStringIO import StringIO
+
+
+def load_chromosome_sequence_dict_bio(fasta_filepath):
+    start = timeit.default_timer()
+    with gzip.open(fasta_filepath, "rt") as handle:  # only "r" doesnt work in python 3:
+        chromosome_sequence_dict = SeqIO.to_dict(SeqIO.parse(handle, "fasta"))
+    stop = timeit.default_timer()
+    print('time to build sequence index using SeqIO %dsec' % (stop - start))
+    return chromosome_sequence_dict
+
 
 def load_chromosome_sequence_dict(fasta_filepath):
     '''
-    TODO replace this with biopython:
-
-    from Bio import SeqIO
-    with gzip.open(fasta_file, "rt") as handle:  # only "r" doesnt work in python 3:
-        chromosome_sequence_dict = SeqIO.to_dict(SeqIO.parse(handle, "fasta"))
-
-    :param fasta_filepath:
-    :return:
+    :param fasta_filepath: "output/v_85/danio_rerio/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz"
+    :return: dict { chromosome -> dna sequence }
     '''
-    # chromosome_data_path = "output/v85_2017/danio_rerio/v_85/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz"
 
     # if not os.path.exists(fasta_filepath):
     #     exit("\t ... fasta file does not exist %s." % fasta_filepath)
@@ -51,3 +56,117 @@ def load_chromosome_sequence_dict(fasta_filepath):
 
     return chromosome_sequence_dict
 
+def load_chromosome_sequence_dict_stringio(fasta_filepath):
+    '''
+    this doesnt measure any faster than plain string concatenation
+
+    :param fasta_filepath: "output/v_85/danio_rerio/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz"
+    :return: dict { chromosome -> dna sequence }
+    '''
+
+    # if not os.path.exists(fasta_filepath):
+    #     exit("\t ... fasta file does not exist %s." % fasta_filepath)
+    start = timeit.default_timer()
+
+    try:
+        input_file_handle = gzip.open(fasta_filepath, "rb")
+    except:
+        print "failed to read fasta file: ", fasta_filepath, sys.exc_info()[0]
+        raise
+
+    buffer= StringIO()
+    chromosome_sequence_dict = {}
+
+    for line in input_file_handle:
+        if line.startswith(">"):
+            seq = buffer.getvalue()
+            if seq!= "":
+                #print l ,chromosome_name, len(seq)  ####### Good check to see if everything is rightly stored
+                if chromosome_name not in chromosome_sequence_dict:
+                    chromosome_sequence_dict[chromosome_name] = seq
+
+            buffer = StringIO() # or just .seek(0) .truncate() ?
+
+            l = line.strip("\n").strip(">").split(" ")
+            chromosome_name = l[0]
+
+        else:
+            buffer.write(line.strip())
+
+    seq = buffer.getvalue()
+    chromosome_sequence_dict[chromosome_name] = seq
+
+    stop = timeit.default_timer()
+    print('time to build sequence index using StringIO %dsec' % (stop - start))
+
+    return chromosome_sequence_dict
+
+def load_chromosome_sequence_dict_list(fasta_filepath):
+    '''
+    this doesnt measure any faster than plain string concatenation
+
+    :param fasta_filepath: "output/v_85/danio_rerio/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz"
+    :return: dict { chromosome -> dna sequence }
+    '''
+
+    # if not os.path.exists(fasta_filepath):
+    #     exit("\t ... fasta file does not exist %s." % fasta_filepath)
+    start = timeit.default_timer()
+
+    try:
+        input_file_handle = gzip.open(fasta_filepath, "rb")
+    except:
+        print "failed to read fasta file: ", fasta_filepath, sys.exc_info()[0]
+        raise
+
+    buffer = []
+    chromosome_sequence_dict = {}
+
+    for line in input_file_handle:
+        if line.startswith(">"):
+            seq = ''.join(buffer)
+            if seq!= "":
+                #print l ,chromosome_name, len(seq)  ####### Good check to see if everything is rightly stored
+                if chromosome_name not in chromosome_sequence_dict:
+                    chromosome_sequence_dict[chromosome_name] = seq
+
+            # python 3 has .clear()
+            # del buffer[:]
+            buffer = []
+
+            l = line.strip("\n").strip(">").split(" ")
+            chromosome_name = l[0]
+
+        else:
+            buffer.append(line.strip())
+
+    seq = ''.join(buffer)
+    chromosome_sequence_dict[chromosome_name] = seq
+
+    stop = timeit.default_timer()
+    print('time to build sequence index using join on list %dsec' % (stop - start))
+
+    return chromosome_sequence_dict
+
+def test(fasta_filepath):
+    start = timeit.default_timer()
+    with gzip.open(fasta_filepath, "rb") as handle:
+        for line in handle:
+            if line[0] == '>':
+                pass
+    stop = timeit.default_timer()
+    print('test time on %s %dsec' % (fasta_filepath, stop - start))
+
+
+if __name__ == '__main__':
+    test('../output/v_85/homo_sapiens/Raw_data_files/Homo_sapiens.GRCh38.dna.toplevel.fa.gz')
+    test('../output/v_85/danio_rerio/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz')
+    # output:
+    # test time on ../output/v_85/homo_sapiens/Raw_data_files/Homo_sapiens.GRCh38.dna.toplevel.fa.gz 1451sec
+    # test time on ../output/v_85/danio_rerio/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz 50sec
+    #
+    # time { gunzip Homo_sapiens.GRCh38.dna.toplevel.fa.gz ; cat Homo_sapiens.GRCh38.dna.toplevel.fa | wc -l; }
+    # 797852943
+    # real	1m56.876s
+    #
+    # conclusion: READING GZIP DOMINATES THE PERFORMANCE
