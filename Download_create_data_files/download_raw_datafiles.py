@@ -44,10 +44,13 @@ if __name__ == "__main__":
     file_category = "Raw_data_files"
 
     download_from_url(params['base_url_gtf'], tempfile_path, params['species_name'], file_category)
+
     destination = download_from_url(params['DNA_top_level_fa'], tempfile_path, params['species_name'],  file_category)
     # reading gzip is much much slower than uncompressing and reading uncompressed:
     call(["gunzip", destination])
-    download_from_url(params['GVF_file'], tempfile_path, params['species_name'], file_category)
+
+    destination =download_from_url(params['GVF_file'], tempfile_path, params['species_name'], file_category)
+    call(["gunzip", destination])
 
 #base_url_gtf_1 = "ftp://ftp.ensembl.org/pub/release-90/gtf/danio_rerio/Danio_rerio.GRCz10.90.gtf.gz"
 #DNA_top_level_fa = "ftp://ftp.ensembl.org/pub/release-90/fasta/danio_rerio/dna/Danio_rerio.GRCz10.dna.toplevel.fa.gz"

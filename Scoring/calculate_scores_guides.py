@@ -149,40 +149,28 @@ if __name__ == "__main__":
     except Exception as e:
         exit("\t ... Cannot create output directories %s" % guide_file_score_directory)
 
-
-    output_file_path =  guide_file_score_directory
+    output_file_path = guide_file_score_directory
     output_file_descript = "_scores.txt"
-
-    #####Step 1
-    ### Step 2
-    #### Transcript cds info dict
 
     start = timeit.default_timer()
 
     transcript_cds_file_name = params['transcript_cds_file_name']
-    transcript_cds_info_dict = fn_scoring.make_transcript_cds_info_dict (transcript_cds_file_name, base_path)
+    transcript_cds_info_dict = fn_scoring.make_transcript_cds_info_dict(transcript_cds_file_name, base_path)
 
-
-    ###### Protein dict
     protein_dir_path = os.path.join('input', ensembl_relase, species, "proteins")
-    protein_domain_info_dict =  fn_scoring.make_protein_dict(protein_dir_path)
+    protein_domain_info_dict = fn_scoring.make_protein_dict(protein_dir_path)
 
+    compressed_variation_filepath = os.path.join('output', ensembl_relase, species, 'Raw_data_files', os.path.basename(params['GVF_file']))
+    variation_filepath = os.path.splitext(compressed_variation_filepath)[0]
+    snv_dict = fn_scoring.make_var_dict(variation_filepath)
 
-    ###### Variation dict
-    variation_file_name = os.path.basename(params['GVF_file'])
-    var_dir_path = os.path.join('output', ensembl_relase, species, 'Raw_data_files')
-    snv_dict = fn_scoring.make_var_dict(variation_file_name,var_dir_path)
     stop = timeit.default_timer()
     print('time to prepare for computation %dsec' % (stop - start))
 
     start = timeit.default_timer()
 
-
-    ################ callling the main function
-    # input_file_path = sys.argv[1]
     num_processed = 0
-
-    guides_info_dir = 'output/v85_2017/danio_rerio/v_85/Guide_files_with_information/v0/'
+    guides_info_dir = os.path.join(base_path, '/Guide_files_with_information/')
     for input_file in os.listdir(guides_info_dir):
         input_file_path = os.path.join(guides_info_dir, input_file)
         # input_file_path = os.path.join(guides_info_dir, 'ENSDARG00000079029_guides_info.txt')

@@ -29,33 +29,26 @@ def search_dir_path (name_of_dir, dir_path):
     return (folder_abs_path)
 
 
-def make_var_dict (variation_file_name,dir_path):
-    
-    variation_file_path = search_file_path(variation_file_name,dir_path)
-    snv_dict = {}
-    
-    if variation_file_path!= "":
+def make_var_dict (variation_file_path):
+    if not os.path.exists(variation_file_path):
+        raise Exception("Error: Variation file not found %s" % variation_file_path)
 
-        variation_input_file_handle = gzip.open(variation_file_path,"rb")
-        
+    snv_dict = {}
+    with open(variation_file_path,"rb") as variation_input_file_handle:
         for line in variation_input_file_handle:
             if line[0]!= "#":
-                l = line.strip("\n").split("\t")
-                
+                l = line.strip().split('\t')
+
                 chr_no = l[0]; vartiation_type = l[2]; vartiation_start = l[3]; vartiation_stop = l[4]; descript = l[-1]
-                
-                if vartiation_type == "SNV":
+
+                if vartiation_type == 'SNV':
                     if chr_no not in snv_dict:
                         snv_dict[chr_no] = set()
-                    #although it's a FU SNP, it might have different start/stop positions ?!?
+                    #although it's a SNP, it might have different start/stop positions ?!?
                     snv_dict[chr_no].add(vartiation_start)
                     snv_dict[chr_no].add(vartiation_stop)
-    else:
-    
-        print "Error : Variation file path not found"
-    
-    
-    return (snv_dict)
+
+    return snv_dict
 
 
 def make_transcript_cds_info_dict(transcript_cds_file_name, dir_path):
