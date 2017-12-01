@@ -162,7 +162,8 @@ if __name__ == "__main__":
 
     compressed_variation_filepath = os.path.join('output', ensembl_relase, species, 'Raw_data_files', os.path.basename(params['GVF_file']))
     variation_filepath = os.path.splitext(compressed_variation_filepath)[0]
-    snv_dict = fn_scoring.make_var_dict(variation_filepath)
+    # snv_dict = fn_scoring.make_var_dict(variation_filepath)
+    snv_dict = {}
 
     stop = timeit.default_timer()
     print('time to prepare for computation %dsec' % (stop - start))
@@ -170,7 +171,7 @@ if __name__ == "__main__":
     start = timeit.default_timer()
 
     num_processed = 0
-    guides_info_dir = os.path.join(base_path, '/Guide_files_with_information/')
+    guides_info_dir = os.path.join(base_path, 'Guide_files_with_information/')
     for input_file in os.listdir(guides_info_dir):
         input_file_path = os.path.join(guides_info_dir, input_file)
         # input_file_path = os.path.join(guides_info_dir, 'ENSDARG00000079029_guides_info.txt')
