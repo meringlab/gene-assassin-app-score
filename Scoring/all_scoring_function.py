@@ -78,6 +78,14 @@ def make_transcript_cds_info_dict(transcript_cds_file_name, dir_path):
             cds_length = l[-1]
             # transcript_strand = l[-2]
 
+            # sanity check:
+            if l[-2][0] == '-': # reverse strand
+                if int(cds_stop) > int(cds_start):
+                    print('ERROR cds start/stop incorrect %s' % line)
+            else:
+                if int(cds_stop) < int(cds_start):
+                    print('ERROR cds start/stop incorrect %s' % line)
+
             if transcript_id not in transcript_cds_info:
                 transcript_cds_info[transcript_id] = {}
 
