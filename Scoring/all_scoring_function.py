@@ -401,7 +401,7 @@ def calculate_score_protein_domains (cutsite_18, gene_id,protein_domain_info_dic
             
             if domain_start > domain_stop:
                 
-                print "Error, start > stop"
+                print("Error, start > stop")
                 
                 domain_score = "Error"
                 
