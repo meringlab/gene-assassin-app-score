@@ -4,6 +4,7 @@ import gzip
 import timeit
 from Bio import SeqIO
 from cStringIO import StringIO
+import io
 
 
 def load_chromosome_sequence_dict_bio(fasta_filepath):
@@ -26,14 +27,14 @@ def load_chromosome_sequence_dict(fasta_filepath):
     start = timeit.default_timer()
 
     try:
-        input_file_handle = gzip.open(fasta_filepath, "rb")
+        gz = gzip.open(fasta_filepath, "rb")
     except:
         print "failed to read fasta file: ", fasta_filepath, sys.exc_info()[0]
         raise
 
     seq= ""
     chromosome_sequence_dict = {}
-
+    input_file_handle = io.BufferedReader(gz)
     for line in input_file_handle:
         if line.startswith(">"):
             if seq!= "":
@@ -107,7 +108,7 @@ def load_chromosome_sequence_dict_list(fasta_filepath):
     start = timeit.default_timer()
 
     try:
-        input_file_handle = gzip.open(fasta_filepath, "rb")
+        gz = gzip.open(fasta_filepath, "rb")
     except:
         print "failed to read fasta file: ", fasta_filepath, sys.exc_info()[0]
         raise
@@ -115,6 +116,7 @@ def load_chromosome_sequence_dict_list(fasta_filepath):
     buffer = []
     chromosome_sequence_dict = {}
 
+    input_file_handle = io.BufferedReader(gz)
     for line in input_file_handle:
         if line.startswith(">"):
             seq = ''.join(buffer)
@@ -141,7 +143,7 @@ def load_chromosome_sequence_dict_list(fasta_filepath):
 
     return chromosome_sequence_dict
 
-def test(fasta_filepath):
+def test_read_gzip(fasta_filepath):
     start = timeit.default_timer()
     with gzip.open(fasta_filepath, "rb") as handle:
         for line in handle:
@@ -150,10 +152,21 @@ def test(fasta_filepath):
     stop = timeit.default_timer()
     print('test time on %s %dsec' % (fasta_filepath, stop - start))
 
+def test_read_gzip_buffer(fasta_filepath):
+    c = 0
+    start = timeit.default_timer()
+    with gzip.open(fasta_filepath, "rb") as gz:
+        f = io.BufferedReader(gz)
+        for line in f:
+            if line[0] == '>':
+                c+=1
+    stop = timeit.default_timer()
+    print('test buffer read time on %s %dsec' % (fasta_filepath, stop - start))
+
 
 if __name__ == '__main__':
-    test('../output/v_85/homo_sapiens/Raw_data_files/Homo_sapiens.GRCh38.dna.toplevel.fa.gz')
-    test('../output/v_85/danio_rerio/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz')
+    # test_read_gzip('../output/v_85/homo_sapiens/Raw_data_files/Homo_sapiens.GRCh38.dna.toplevel.fa.gz')
+    # test_read_gzip('../output/v_85/danio_rerio/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz')
     # output:
     # test time on ../output/v_85/homo_sapiens/Raw_data_files/Homo_sapiens.GRCh38.dna.toplevel.fa.gz 1451sec
     # test time on ../output/v_85/danio_rerio/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz 50sec
@@ -163,3 +176,9 @@ if __name__ == '__main__':
     # real	1m56.876s
     #
     # conclusion: READING GZIP DOMINATES THE PERFORMANCE
+
+    #
+    test_read_gzip('../output/v_85/danio_rerio/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz')
+    test_read_gzip_buffer('../output/v_85/danio_rerio/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz')
+    # test_read_gzip_buffer('Homo_sapiens.GRCh38.dna.toplevel.fa.gz')
+    # test buffer read time on Homo_sapiens.GRCh38.dna.toplevel.fa.gz 576sec
