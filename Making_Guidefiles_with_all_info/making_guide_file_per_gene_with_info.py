@@ -13,11 +13,11 @@ import chromosome_sequence_dict
 import making_guide_files_per_gene_functions as fn_guideinfo
 
 
-def build_exons_index(exon_dict):
+def build_exons_index(exons):
     start = timeit.default_timer()
 
     chromosomes = {}
-    for exon_location in exon_dict.location_exon_id:
+    for exon_location in exons.location_exon_id:
         region = exon_location.split(":")
         chr = region[0]
         if chr not in chromosomes:
@@ -25,13 +25,13 @@ def build_exons_index(exon_dict):
         start = int(region[1].split("-")[0])
         end = int(region[1].split("-")[1]) + 1
         if start == end:
-            print('WARN cannot put %s %s' % (exon_location, exon_dict.location_exon_id[exon_location]))
+            print('WARN cannot put %s %s' % (exon_location, exons.location_exon_id[exon_location]))
             continue
         if start > end:
             print(
-                'WARN exon_start > exon_end %s %s' % (exon_location, exon_dict.location_exon_id[exon_location]))
+                'WARN exon_start > exon_end %s %s' % (exon_location, exons.location_exon_id[exon_location]))
             continue
-        chromosomes[chr][start:end] = exon_dict.location_exon_id[exon_location]
+        chromosomes[chr][start:end] = exons.location_exon_id[exon_location]
 
     stop = timeit.default_timer()
     print('time to build exons index %dsec' % (stop - start))
@@ -47,22 +47,15 @@ def making_guide_file_with_info(guide_file_path, guide_file_info_directory, chro
     gene_name = os.path.basename(guide_file).split(".")[0]
     gene_output_file_name = gene_name + "_guides_info.txt"
 
-    if os.path.exists(guide_file_info_directory):
-
-        output_file_path = guide_file_info_directory
-        gene_output_file_name_path = os.path.join(output_file_path, gene_output_file_name)
-        gene_output_file_handle = open(gene_output_file_name_path, "w")
-
-        ####### Eception file
-
-        log_file_name = os.path.join(guide_file_info_directory, "log_file_exceptions.txt")
-        log_file_handle = open(log_file_name, "a")
-
-    else:
-
+    if not os.path.exists(guide_file_info_directory):
         exit("Guide file info dir doesnot exist %s" % guide_file_info_directory)
 
-    ######### Header
+    output_file_path = guide_file_info_directory
+    gene_output_file_name_path = os.path.join(output_file_path, gene_output_file_name)
+    gene_output_file_handle = open(gene_output_file_name_path, "w")
+
+    log_file_name = os.path.join(guide_file_info_directory, "log_file_exceptions.txt")
+    log_file_handle = open(log_file_name, "a")
 
     header = ["Gene_id", "Guide_seq_with_ngg", "Guide_seq", "Guide_chr_no", "Guide_start", "Guide_stop", "Guide_strand",
               "Guide_uniqness", \
@@ -71,19 +64,13 @@ def making_guide_file_with_info(guide_file_path, guide_file_info_directory, chro
               "Total_transcript_count", "Transcript_list", "Total_exons_in_transcript_list",
               "Exon_rank_in_transcript_list", \
               "microhomology_seq"]
-
     header_output = "\t".join(header) + "\n"
-
-    ###### Writing header
     gene_output_file_handle.write(header_output)
 
-    ################## Processing the file
-
     guide_input_file = open(guide_file)
-
     for line in guide_input_file:
 
-        l = line.strip("\n").split("\t")
+        l = line.strip().split('\t')
         guide_chr = l[0]
         guide_start = l[1]
         guide_stop = l[2]
