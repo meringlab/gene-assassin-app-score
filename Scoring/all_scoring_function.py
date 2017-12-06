@@ -37,19 +37,6 @@ def search_file_path (name_of_file, search_path_dir):
     
     return (file_abs_path)
     
-    
-def search_dir_path (name_of_dir, dir_path):
-    
-    folder_abs_path = ""
-    
-    for r,d,f in os.walk(dir_path):
-        for folders in d:
-            if folders == name_of_dir :
-                folder_abs_path = os.path.join(r,folders)
-               
-    
-    return (folder_abs_path)
-
 
 def make_var_dict (variation_file_path):
     if not os.path.exists(variation_file_path):
@@ -149,119 +136,82 @@ def make_protein_dict (protein_path):
     return protein_domain_info_dict
     
 # Genome Context_scores
-##1
-def calculate_proximity_to_CDS (transcript_id, cutsite18,transcript_cds_info_dict): ################# if within 10%CDS_start/stop then penalised
-    
+
+def calculate_proximity_to_CDS(transcript_id, cutsite18, transcript_cds_info_dict):
+    '''
+    if within 10%CDS_start/stop then penalised
+
+    :param transcript_id:
+    :param cutsite18:
+    :param transcript_cds_info_dict:
+    :return:
+    '''
     transcript_cds_data = transcript_cds_info_dict[transcript_id]["cds_start_stop_len"]
-    
-    cds_start = float(transcript_cds_data[0])
-    cds_stop = float(transcript_cds_data[1])
-    cds_length = float(transcript_cds_data[2])
-    
+
+    cds_start, cds_stop, cds_length = map(float, transcript_cds_data)
     cutsite18_float = float(cutsite18)
-    
-    cds_len_10_percent = round(0.1*cds_length)
-    
-    if cds_start < cds_stop:     #################### forward strand
-        
+    cds_len_10_percent = round(0.1 * cds_length)
+
+    if cds_start < cds_stop: # forward strand
         lower_limit = cds_start + cds_len_10_percent
         upper_limit = cds_stop - cds_len_10_percent
-        
-    else:  ############ reverse strand ()
-        
+    else:  # reverse strand ()
         lower_limit = cds_stop + cds_len_10_percent
         upper_limit = cds_start - cds_len_10_percent
-        
-        
-        
-    if  cutsite18_float > lower_limit and cutsite18_float < upper_limit: ############ safe region to be not too near cds start or stop
-        
-        penalty_score = 0
-        
-    else:
-        
-        penalty_score = -1
-        
-    
-    return (penalty_score)
 
-def calculate_proximity_to_CDS_for_transcript_list_modified (transcript_list_input, cutsite18,transcript_cds_info_dict): ################# if within 10%CDS_start/stop then penalised
-    
+    if cutsite18_float > lower_limit and cutsite18_float < upper_limit:
+        # safe region to be not too near cds start or stop
+        return 0
+    return -1
 
-    
+def calculate_proximity_to_CDS_for_transcript_list_modified (transcript_list_input, cutsite18,transcript_cds_info_dict):
+    '''
+    if within 10%CDS_start/stop then penalised
+    :param transcript_list_input:
+    :param cutsite18:
+    :param transcript_cds_info_dict:
+    :return:
+    '''
     transcript_list = parse_as_list(transcript_list_input)
-    
     if len(transcript_list) == 0:
-        avg_penalty_score_prox_CDS = -1
+        return -1
     
-    else:
-        
-        penalty_score_prox_CDS = []
-        
-        
-        for i in range(0,len(transcript_list)):
-                
-            transcript = transcript_list[i]
-            
-            guide_cutsite_proximity_CDS = calculate_proximity_to_CDS(transcript_id = transcript, cutsite18 = cutsite18, transcript_cds_info_dict = transcript_cds_info_dict)
-            
-            penalty_score_prox_CDS.append(guide_cutsite_proximity_CDS)
-            
-        avg_penalty_score_prox_CDS = round( float(sum(penalty_score_prox_CDS))/float(len(penalty_score_prox_CDS)), 2)
-        
-    
-    return (avg_penalty_score_prox_CDS)
+    scores = []
+    for transcript in transcript_list:
+        scores.append(calculate_proximity_to_CDS(transcript, cutsite18, transcript_cds_info_dict))
+
+    return round(float(sum(scores)) / len(scores), 2)
 
 
-
-
-######### 2
 def calculate_proximity_splice_site (dist_cutsite_exon_cds_start, dist_cutsite_exon_cds_stop, exon_rank_in_transcript, transcript_id, transcript_cds_info_dict):
-    
-        
     transcript_cds_exon_ranks = transcript_cds_info_dict[transcript_id]["cds_first_last_exon_rank"]
-    
     input_exon_rank = str(exon_rank_in_transcript)
     
-    if input_exon_rank in transcript_cds_exon_ranks:       ########### first and last exon
-        
+    if input_exon_rank in transcript_cds_exon_ranks: # first and last exon
         if float(dist_cutsite_exon_cds_start) <= 20 or float(dist_cutsite_exon_cds_stop) <= 20:
-            
             proximity_penalty = -1.5
-        
         else:
-            
             proximity_penalty = 0
-            
     else:
-        
         if float(dist_cutsite_exon_cds_start) <= 15 or float(dist_cutsite_exon_cds_stop) <= 15:
-            
             proximity_penalty = -1
-        
         else:
-            
             proximity_penalty = 0
-            
-            
-            
+
     return (proximity_penalty)
 
+
 def calculate_proximity_splice_site_for_exon_rank_list_modified (exon_rank_list_input, dist_cutsite_exon_cds_start_list_input, dist_cutsite_exon_cds_stop_list_input, transcript_list_input, transcript_cds_info_dict):
-    
-    
     exon_list = parse_as_list(exon_rank_list_input)
     transcript_list = parse_as_list(transcript_list_input)
     dist_cutsite_exon_cds_start_list  = parse_as_list(dist_cutsite_exon_cds_start_list_input)
     dist_cutsite_exon_cds_stop_list = parse_as_list(dist_cutsite_exon_cds_stop_list_input)
     
     
-    if len(exon_list) == len(transcript_list): ###### no, non-coding exon
-        
+    if len(exon_list) == len(transcript_list): # no, non-coding exon
         penalty_score_prox_splicesite = []
     
         for i in range(0,len(exon_list)):
-                
             exon_rank = exon_list[i]
             transcript = transcript_list[i]
             dist_cutsite_exon_cds_start = dist_cutsite_exon_cds_start_list[i]
@@ -272,138 +222,111 @@ def calculate_proximity_splice_site_for_exon_rank_list_modified (exon_rank_list_
                 dist_cutsite_exon_cds_stop=dist_cutsite_exon_cds_stop,
                 exon_rank_in_transcript=exon_rank, transcript_id=transcript,
                 transcript_cds_info_dict=transcript_cds_info_dict)
-            
-            
-            penalty_score_prox_splicesite.append(guide_cutsite_proximity_splicesite)
-            
-        avg_penalty_score_prox_splicesite =  round(float(sum(penalty_score_prox_splicesite))/float(len(penalty_score_prox_splicesite)) ,2)
-            
-        
-        
-    else:
-        
-        non_noncoding_exons = len(exon_list) - len(transcript_list)
-        
-        exon_list_modified = [x for x in exon_list if x!= 0]
-        dist_cutsite_exon_cds_start_list_modified  = [x for x in dist_cutsite_exon_cds_start_list if x!= "nan"]
-        dist_cutsite_exon_cds_stop_list_modified  = [x for x in dist_cutsite_exon_cds_stop_list if x!= "nan"]
-    
-        
-        penalty_score_prox_splicesite = []
-        
-        penalty_score_prox_splicesite_nc_exons = [-1.5 for x in range(non_noncoding_exons)] ###### penalising for no. of non-coding exons
-        penalty_score_prox_splicesite = penalty_score_prox_splicesite + penalty_score_prox_splicesite_nc_exons
-        
-        
-        if len(transcript_list) != 0:   ######## Case where only one exon is hit by guide and that is non-coding
-            
-            for i in range(0,len(exon_list_modified)):
-                    
-                exon_rank = exon_list_modified[i]
-                transcript = transcript_list[i]
-                dist_cutsite_exon_cds_start = dist_cutsite_exon_cds_start_list_modified[i]
-                dist_cutsite_exon_cds_stop = dist_cutsite_exon_cds_stop_list_modified[i]
 
-                guide_cutsite_proximity_splicesite = calculate_proximity_splice_site(
-                    dist_cutsite_exon_cds_start=dist_cutsite_exon_cds_start,
-                    dist_cutsite_exon_cds_stop=dist_cutsite_exon_cds_stop,
-                    exon_rank_in_transcript=exon_rank, transcript_id=transcript,
-                    transcript_cds_info_dict=transcript_cds_info_dict)
-                
-                
-                penalty_score_prox_splicesite.append(guide_cutsite_proximity_splicesite)
-            
-        avg_penalty_score_prox_splicesite =  round(float(sum(penalty_score_prox_splicesite))/float(len(penalty_score_prox_splicesite)) ,2)
-            
-    
-    return (avg_penalty_score_prox_splicesite)
-    
-    
-##### 3
+            penalty_score_prox_splicesite.append(guide_cutsite_proximity_splicesite)
+
+        score = float(sum(penalty_score_prox_splicesite)) / float(len(penalty_score_prox_splicesite))
+        return round(score, 2)
+
+    # there're non-coding exons for some transcripts, must take care of that:
+    non_noncoding_exons = len(exon_list) - len(transcript_list)
+
+    exon_list_modified = [x for x in exon_list if x!= 0]
+    dist_cutsite_exon_cds_start_list_modified  = [x for x in dist_cutsite_exon_cds_start_list if x!= "nan"]
+    dist_cutsite_exon_cds_stop_list_modified  = [x for x in dist_cutsite_exon_cds_stop_list if x!= "nan"]
+
+    penalty_score_prox_splicesite = []
+
+    penalty_score_prox_splicesite_nc_exons = [-1.5 for x in range(non_noncoding_exons)] ###### penalising for no. of non-coding exons
+    penalty_score_prox_splicesite = penalty_score_prox_splicesite + penalty_score_prox_splicesite_nc_exons
+
+
+    if len(transcript_list) != 0:   # Case where only one exon is hit by guide and that is non-coding
+        for i in range(0, len(exon_list_modified)):
+            exon_rank = exon_list_modified[i]
+            transcript = transcript_list[i]
+            dist_cutsite_exon_cds_start = dist_cutsite_exon_cds_start_list_modified[i]
+            dist_cutsite_exon_cds_stop = dist_cutsite_exon_cds_stop_list_modified[i]
+
+            guide_cutsite_proximity_splicesite = calculate_proximity_splice_site(
+                dist_cutsite_exon_cds_start=dist_cutsite_exon_cds_start,
+                dist_cutsite_exon_cds_stop=dist_cutsite_exon_cds_stop,
+                exon_rank_in_transcript=exon_rank, transcript_id=transcript,
+                transcript_cds_info_dict=transcript_cds_info_dict)
+
+            penalty_score_prox_splicesite.append(guide_cutsite_proximity_splicesite)
+
+    score = float(sum(penalty_score_prox_splicesite)) / float(len(penalty_score_prox_splicesite))
+    return round(score, 2)
+
 
 def calculate_exon_ranking_score_modified (exon_ranks) :
-    
-    
-    ##### there can be no cases of nan
-    
-    exon_ranks_unstring = parse_as_list(exon_ranks)
-    exon_rank_list = [float(x) for x in exon_ranks_unstring]
-    
-    
+    exon_rank_list = [float(x) for x in parse_as_list(exon_ranks)]
+
+    # make sure there're no cases of nan
     for x in exon_rank_list:
         if x < 0 or math.isnan(x):
-            raise Exception('invalid exon rank: %s %s' %(x, exon_ranks))
-    
-    
-    
-    combined_exon_rank = round(sum(exon_rank_list)/len(exon_rank_list),2)
-    
-    if combined_exon_rank == 1:
-        exon_rank_score = 1
-    
-    if combined_exon_rank >1 and combined_exon_rank <= 3:
-        exon_rank_score = 2
-    
-    if combined_exon_rank > 3 and combined_exon_rank <= 5:
-        exon_rank_score = 1
-        
-    if combined_exon_rank >5 and combined_exon_rank <= 7:
-        exon_rank_score = 0.5
-        
-    if combined_exon_rank >7 :
-        exon_rank_score = 0.25
-    
+            raise Exception('invalid exon rank: %s %s' % (x, exon_ranks))
+
+    combined_exon_rank = round(sum(exon_rank_list) / len(exon_rank_list), 2)
+
     if combined_exon_rank < 1:
         exon_rank_score = 0
-    
-    
-    return (exon_rank_score)
-    
-    
-#### 4
 
-def calculate_transcript_coverage_score_modified (transcript_ids,transcript_count):
-    
-    
+    if combined_exon_rank == 1:
+        exon_rank_score = 1
+
+    if 1 < combined_exon_rank <= 3:
+        exon_rank_score = 2
+
+    if 3 < combined_exon_rank <= 5:
+        exon_rank_score = 1
+
+    if 5 < combined_exon_rank <= 7:
+        exon_rank_score = 0.5
+
+    if combined_exon_rank > 7:
+        exon_rank_score = 0.25
+
+    return exon_rank_score
+
+
+def calculate_transcript_coverage_score_modified(transcript_ids, transcript_count):
     transcript_ids_unstring = parse_as_list(transcript_ids)
-    
-    transcript_covered = len(transcript_ids_unstring)
-    transcript_count = float(transcript_count)
-    
-    
-    assert(transcript_covered > 0) , "Transcript_list_empty"
-    assert(transcript_covered <= transcript_count) , "Transcript_count < transcipt_id_list"
-    
+
     if "nan" in transcript_ids_unstring:
         raise Exception('"nan" in transcript_ids: %s' % transcript_ids)
-        
-    
-    transcript_covered_ratio = round(transcript_covered/transcript_count,2)
-    
-    if transcript_covered_ratio == 0:   ###### cases where transcript list is empty
+
+    transcript_covered = len(transcript_ids_unstring)
+    transcript_count = float(transcript_count)
+
+    assert (transcript_covered > 0), "Transcript_list_empty"
+    assert (transcript_covered <= transcript_count), "Transcript_count < transcipt_id_list"
+
+    transcript_covered_ratio = round(transcript_covered / transcript_count, 2)
+
+    if transcript_covered_ratio == 0:  # cases where transcript list is empty
         transcript_covered_score = 0
-    
-    if transcript_covered_ratio > 0 and transcript_covered_ratio <= 0.25:
-        
+
+    if 0 < transcript_covered_ratio <= 0.25:
         transcript_covered_score = 0.5
-        
-    if transcript_covered_ratio > 0.25 and transcript_covered_ratio <= 0.5:
-        
+
+    if 0.25 < transcript_covered_ratio <= 0.5:
         transcript_covered_score = 1
-        
-    if transcript_covered_ratio > 0.5 and transcript_covered_ratio <= 0.75:
-        
+
+    if 0.5 < transcript_covered_ratio <= 0.75:
         transcript_covered_score = 1.5
-        
-    if transcript_covered_ratio > 0.75 and transcript_covered_ratio <= 1:
-        
+
+    if 0.75 < transcript_covered_ratio <= 1:
         transcript_covered_score = 2.5
-     
-    
+
     return (transcript_covered_score)
+
 
 def calculate_score_protein_domains (cutsite_18, gene_id,protein_domain_info_dict):
     '''
+    if cutsite falls into a domain then 2.5, otherwise 0
+
     :param cutsite_18:
     :param gene_id:
     :param protein_domain_info_dict:
@@ -425,9 +348,6 @@ def calculate_score_protein_domains (cutsite_18, gene_id,protein_domain_info_dic
     return 0
 
     
-###### Microhomology Scores
-
-
 def  get_microhomology_out_of_frame_score (seq):
 
     length_weight=20.0
@@ -527,9 +447,7 @@ def  get_microhomology_out_of_frame_score (seq):
     return (microhomology_score,out_of_frame_score)
 
 
-
 def calculate_microhomology_score (seq):
-    
     microhomology_out_frame_score =  get_microhomology_out_of_frame_score(seq = seq)
     microhomology_score = microhomology_out_frame_score[0]
     out_of_frame_score = microhomology_out_frame_score[1]
@@ -546,10 +464,6 @@ def calculate_microhomology_score (seq):
 
 
 
-
-
-######### SNP Score
-
 def calculate_snp_score(guide_chr_input, guide_cutsite_18_input,snv_dict):
     guide_chr = str(guide_chr_input)
     if guide_chr not in snv_dict:
@@ -564,7 +478,3 @@ def calculate_snp_score(guide_chr_input, guide_cutsite_18_input,snv_dict):
          
     return s
 
-    
-    
-
-    

@@ -23,7 +23,7 @@ def build_exons_index(exons):
         if chr not in chromosomes:
             chromosomes[chr] = IntervalTree()
         start = int(region[1].split("-")[0])
-        end = int(region[1].split("-")[1]) + 1
+        end = int(region[1].split("-")[1]) + 1 # upper is exclusive here, but for ensembl should be inclusive so +1
         if start == end:
             print('WARN cannot put %s %s' % (exon_location, exons.location_exon_id[exon_location]))
             continue
@@ -200,6 +200,8 @@ def generate_guides(params, exons_index, sequence_dict, output_directory, exon_d
     start = timeit.default_timer()
     num_processed = 0
     guides_directory = os.path.join('input', params['ensembl_release'], params['species_name'], 'guides')
+    # weird cases for testing:
+    # for guide_file_path in ['ENSDARG00000100456.guides.txt']: # has single nucleotide exon
     for guide_file_path in os.listdir(guides_directory):
         making_guide_file_with_info(os.path.join(guides_directory, guide_file_path), output_directory, exons_index,
                                     sequence_dict, exon_dict)

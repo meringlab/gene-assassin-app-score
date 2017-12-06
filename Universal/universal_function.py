@@ -80,28 +80,3 @@ def search_file_path (name_of_file, search_path_dir):
                 file_abs_path = os.path.join(r,files)
     
     return (file_abs_path)
-    
-    
-def search_dir_path (name_of_dir, dir_path):
-    
-    folder_abs_path = ""
-    
-    for r,d,f in os.walk(dir_path):
-        for folders in d:
-            if folders == name_of_dir :
-                folder_abs_path = os.path.join(r,folders)
-               
-    
-    return (folder_abs_path)
-  
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
