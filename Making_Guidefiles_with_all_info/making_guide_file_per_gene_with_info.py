@@ -58,11 +58,11 @@ def making_guide_file_with_info(guide_file_path, guide_file_info_directory, chro
     log_file_handle = open(log_file_name, "a")
 
     header = ["Gene_id", "Guide_seq_with_ngg", "Guide_seq", "Guide_chr_no", "Guide_start", "Guide_stop", "Guide_strand",
-              "Guide_uniqness", \
-              "Guide_exon_list", "Exon_biotype_list", \
-              "cutsite18", "dist_cds_start_cutsite", "dist_cds_stop_cutsite", \
+              "Guide_uniqness",
+              "Guide_exon_list", "Exon_biotype_list",
+              "cutsite18", "dist_cds_start_cutsite", "dist_cds_stop_cutsite",
               "Total_transcript_count", "Transcript_list", "Total_exons_in_transcript_list",
-              "Exon_rank_in_transcript_list", \
+              "Exon_rank_in_transcript_list",
               "microhomology_seq"]
     header_output = "\t".join(header) + "\n"
     gene_output_file_handle.write(header_output)
@@ -143,16 +143,14 @@ def making_guide_file_with_info(guide_file_path, guide_file_info_directory, chro
             ######### Getting guide info
 
         try:
-            ####### Guide_uniqueness
-
+            # Guide_uniqueness
             offtarget_profile_list = guide_offtarget_profile.split(",")
             guide_uniq = offtarget_profile_list[1]
 
-            ###### seq_with_ngg
             guide_seq_with_ngg = fn_guideinfo.get_guide_seq_with_ngg(guide_start, guide_stop, guide_strand, guide_chr,
                                                                      sequence_dict)
 
-            ########## Extracting feature
+            # Extracting feature
             cds_start_stop_cut_site = fn_guideinfo.calculate_cutsite18_dist_fom_exon_cds_start_stop_for_exon_list_modified(
                 guide_exon_list_updated, guide_cutsite18, exon_dict)
             exon_genomic_features = fn_guideinfo.extract_exon_features_from_gtf_for_exonlist_modified(
@@ -168,24 +166,15 @@ def making_guide_file_with_info(guide_file_path, guide_file_info_directory, chro
                 microhomology_sequence = "nan"
                 exon_biotype_list = "nan"
 
-                ############ printing
-
-            output = unique_gene_id[
-                         0] + "\t" + guide_seq_with_ngg + "\t" + guide_seq + "\t" + guide_chr + "\t" + guide_start + \
-                     "\t" + guide_stop + "\t" + guide_strand + "\t" + guide_uniq \
-                     + "\t" + str(guide_exon_list_updated) + "\t" + str(exon_biotype_list) + "\t" + str(
-                guide_cutsite18) + "\t" + \
-                     "\t".join(cds_start_stop_cut_site) + "\t" + "\t".join(
-                exon_genomic_features) + "\t" + microhomology_sequence + "\n"
-
+            output = "\t".join(
+                [unique_gene_id[0], guide_seq_with_ngg, guide_seq, guide_chr, guide_start, guide_stop, guide_strand,
+                 guide_uniq, str(guide_exon_list_updated), str(exon_biotype_list), str(guide_cutsite18),
+                 "\t".join(cds_start_stop_cut_site), "\t".join(exon_genomic_features), microhomology_sequence])
             gene_output_file_handle.write(output)
-
-            # print output
+            gene_output_file_handle.write("\n")
 
         except Exception as e:
-
-            log_output = gene_name + "\t" + str(e) + "\t" + "Guide_info_problem" + "\n"
-            log_file_handle.write(log_output)
+            log_file_handle.write(gene_name + "\t" + str(e) + "\t" + "Guide_info_problem" + "\n")
 
     log_file_handle.close()
     gene_output_file_handle.close()
