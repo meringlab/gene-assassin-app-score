@@ -65,34 +65,21 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
             try:
                 #########  Genomic Context Score
 
-                guide_transcripts_prox_CDS_penalty = fn_scoring.calculate_proximity_to_CDS_for_transcript_list_modified(
-                    transcript_id_list, cutsite18, transcript_cds_info_dict)
+                guide_transcripts_prox_CDS_penalty = fn_scoring.calculate_proximity_to_CDS_for_transcript_list_modified(transcript_id_list, cutsite18, transcript_cds_info_dict)
 
-                guide_exons_prox_splicesite_penalty = fn_scoring.calculate_proximity_splice_site_for_exon_rank_list_modified(
-                    exon_rank_list, dist_cutsite_exon_cds_start_list_input=dist_cutsite_cds_start, \
-                    dist_cutsite_exon_cds_stop_list_input=dist_cutsite_cds_stop,
-                    transcript_list_input=transcript_id_list, transcript_cds_info_dict=transcript_cds_info_dict)
+                guide_exons_prox_splicesite_penalty = fn_scoring.calculate_proximity_splice_site_for_exon_rank_list_modified(exon_rank_list, dist_cutsite_exon_cds_start_list_input=dist_cutsite_cds_start,                    dist_cutsite_exon_cds_stop_list_input=dist_cutsite_cds_stop,                    transcript_list_input=transcript_id_list, transcript_cds_info_dict=transcript_cds_info_dict)
 
-                guide_exon_ranking_score = fn_scoring.calculate_exon_ranking_score_modified(
-                    exon_ranks=exon_rank_list)
+                guide_exon_ranking_score = fn_scoring.calculate_exon_ranking_score_modified(exon_ranks=exon_rank_list)
 
-                guide_transcript_covered_score = fn_scoring.calculate_transcript_coverage_score_modified(
-                    transcript_id_list, transcript_count)
+                guide_transcript_covered_score = fn_scoring.calculate_transcript_coverage_score_modified(transcript_id_list, transcript_count)
 
-                ################################### Protein Domain
+                domain_score = fn_scoring.calculate_score_protein_domains(cutsite18, gene_id, protein_domain_info_dict)
 
-                domain_score = fn_scoring.calculate_score_protein_domains(cutsite18, gene_id,
-                                                                          protein_domain_info_dict)
-
-                ############### Microhomology
                 calculated_micrhomology_score = fn_scoring.calculate_microhomology_score(seq=microhomogy_guide)
-
-                ######## Snp scoring
 
                 snp_score = fn_scoring.calculate_snp_score(guide_chr, cutsite18, snv_dict)
 
-                ######### Total scores
-
+                # Total scores
                 scoring_list = list((guide_transcripts_prox_CDS_penalty, guide_exons_prox_splicesite_penalty,
                                      guide_exon_ranking_score, guide_transcript_covered_score, domain_score,
                                      calculated_micrhomology_score, snp_score))
@@ -100,19 +87,19 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
                 scoring_list_no_nan_float = [float(x) for x in scoring_list_no_nan]
                 total_score = sum(scoring_list_no_nan_float) / 10
 
+                output = gene_id + "\t" + exon_list + "\t" + guide_with_ngg + "\t" + guide_chr + "\t" + guide_start + "\t" + guide_stop + "\t" + guide_strand + "\t" + \
+                         str(snp_score) + "\t" + str(domain_score) + "\t" + str(calculated_micrhomology_score) + \
+                         "\t" + str(guide_transcripts_prox_CDS_penalty) + "\t" + str(
+                    guide_exons_prox_splicesite_penalty) + "\t" + str(guide_transcript_covered_score) + "\t" + str(
+                    guide_exon_ranking_score) + \
+                         "\t" + str(total_score) + "\n"
+
+                output_buffer.append(output)
+
             except Exception as e:
                 output_exception = gene_name + "\t" + str(e) + "\t" + guide_seq + "\n"
                 output_log_file_handle.write(output_exception)
-                total_score = "nan"
 
-        output = gene_id + "\t" + exon_list + "\t" + guide_with_ngg + "\t" + guide_chr + "\t" + guide_start + "\t" + guide_stop + "\t" + guide_strand + "\t" + \
-                 str(snp_score) + "\t" + str(domain_score) + "\t" + str(calculated_micrhomology_score) + \
-                 "\t" + str(guide_transcripts_prox_CDS_penalty) + "\t" + str(
-            guide_exons_prox_splicesite_penalty) + "\t" + str(guide_transcript_covered_score) + "\t" + str(
-            guide_exon_ranking_score) + \
-                 "\t" + str(total_score) + "\n"
-
-        output_buffer.append(output)
 
     if output_buffer:
         header = ["Gene_id", "Exon_list", "Guide_with_ngg", "Guide_chr", "Guide_start", "Guide_stop", "Guide_strand", \
@@ -170,7 +157,8 @@ if __name__ == "__main__":
 
     num_processed = 0
     guides_info_dir = os.path.join(base_path, 'Guide_files_with_information/')
-    for input_file in sorted(os.listdir(guides_info_dir)):
+    # for input_file in ['ENSG00000000460_guides_info.txt']: # guide inside an intron!?!
+    for input_file in sorted(os.listdir(guides_info_dir))[4:]:
         input_file_path = os.path.join(guides_info_dir, input_file)
         calculate_score_guide_main(input_file_path, output_file_path, output_file_descript, transcript_cds_info_dict,
                                    protein_domain_info_dict, snv_dict)
