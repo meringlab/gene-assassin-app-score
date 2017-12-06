@@ -244,9 +244,12 @@ def calculate_proximity_splice_site_for_exon_rank_list_modified (exon_rank_list_
             transcript = transcript_list[i]
             dist_cutsite_exon_cds_start = dist_cutsite_exon_cds_start_list[i]
             dist_cutsite_exon_cds_stop = dist_cutsite_exon_cds_stop_list [i]
-                
-            guide_cutsite_proximity_splicesite = calculate_proximity_splice_site(dist_cutsite_exon_cds_start = dist_cutsite_exon_cds_start, dist_cutsite_exon_cds_stop = dist_cutsite_exon_cds_stop,\
-                                                  exon_rank_in_transcript = exon_rank, transcript_id = transcript, transcript_cds_info_dict = transcript_cds_info_dict)
+
+            guide_cutsite_proximity_splicesite = calculate_proximity_splice_site(
+                dist_cutsite_exon_cds_start=dist_cutsite_exon_cds_start,
+                dist_cutsite_exon_cds_stop=dist_cutsite_exon_cds_stop,
+                exon_rank_in_transcript=exon_rank, transcript_id=transcript,
+                transcript_cds_info_dict=transcript_cds_info_dict)
             
             
             penalty_score_prox_splicesite.append(guide_cutsite_proximity_splicesite)
@@ -278,9 +281,12 @@ def calculate_proximity_splice_site_for_exon_rank_list_modified (exon_rank_list_
                 transcript = transcript_list[i]
                 dist_cutsite_exon_cds_start = dist_cutsite_exon_cds_start_list_modified[i]
                 dist_cutsite_exon_cds_stop = dist_cutsite_exon_cds_stop_list_modified[i]
-                    
-                guide_cutsite_proximity_splicesite = calculate_proximity_splice_site(dist_cutsite_exon_cds_start = dist_cutsite_exon_cds_start, dist_cutsite_exon_cds_stop = dist_cutsite_exon_cds_stop,\
-                                                      exon_rank_in_transcript = exon_rank, transcript_id = transcript)
+
+                guide_cutsite_proximity_splicesite = calculate_proximity_splice_site(
+                    dist_cutsite_exon_cds_start=dist_cutsite_exon_cds_start,
+                    dist_cutsite_exon_cds_stop=dist_cutsite_exon_cds_stop,
+                    exon_rank_in_transcript=exon_rank, transcript_id=transcript,
+                    transcript_cds_info_dict=transcript_cds_info_dict)
                 
                 
                 penalty_score_prox_splicesite.append(guide_cutsite_proximity_splicesite)
@@ -374,54 +380,28 @@ def calculate_transcript_coverage_score_modified (transcript_ids,transcript_coun
     
     return (transcript_covered_score)
 
-########################################### Protein Domain
-
 def calculate_score_protein_domains (cutsite_18, gene_id,protein_domain_info_dict):
-    
-    cutsite_18_int = float(cutsite_18)
-    
+    '''
+    :param cutsite_18:
+    :param gene_id:
+    :param protein_domain_info_dict:
+    :return:
+    '''
     if gene_id not in protein_domain_info_dict:
-        
-        domain_score = 0
-    
-    
-    #### to find if the guide covers the domain   
-    else:
-        
-        domain_location = protein_domain_info_dict[gene_id].keys()
-        
-        domain_start_stop_list = [x.split(":")[1] for x in domain_location]
-        
-        
-        for location in domain_start_stop_list:
-            
-            domain_start = float(location.split("-")[0])
-            domain_stop = float(location.split("-")[1])
-            
-            
-            if domain_start > domain_stop:
-                
-                print("Error, start > stop")
-                
-                domain_score = "Error"
-                
-            else:
-                
-                
-                if cutsite_18_int >= domain_start and cutsite_18_int <= domain_stop:
-                    
-                    domain_score = 2.5
-                     
-                    break   ############## to stop searching once it finds it otherwise score becomes 0 again
-                
-                else:
-                    domain_score = 0
-                    
-                         
-    
-    return (domain_score)
-    
-    
+        return 0
+
+    domain_location = protein_domain_info_dict[gene_id].keys()
+    if not domain_location:
+        return 0
+
+    # find if the guide cuts a domain
+    cutsite_18_int = int(float(cutsite_18))
+    for domain_start,domain_stop in [x.split(":")[1].split('-') for x in domain_location]:
+        if float(domain_start) <= cutsite_18_int <= float(domain_stop):
+            return 2.5
+
+    return 0
+
     
 ###### Microhomology Scores
 
@@ -549,8 +529,10 @@ def calculate_microhomology_score (seq):
 ######### SNP Score
 
 def calculate_snp_score(guide_chr_input, guide_cutsite_18_input,snv_dict):
-    
     guide_chr = str(guide_chr_input)
+    if guide_chr not in snv_dict:
+        return 2.5
+
     guide_cutsite_18 = str(guide_cutsite_18_input)
 
     if guide_cutsite_18 in snv_dict[guide_chr]:
