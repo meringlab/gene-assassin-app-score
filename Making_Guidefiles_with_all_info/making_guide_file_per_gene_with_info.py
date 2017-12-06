@@ -127,16 +127,18 @@ def making_guide_file_with_info(guide_file_path, guide_file_info_directory, chro
             guide_exon_list_updated = [x for x in guide_exon_list if x not in guide_exon_list_remove]
             gene_id_list_updated = [exon_dict.exon_gene_info[x]["gene_id"] for x in
                                     guide_exon_list_updated]
-            unique_gene_id = list(set(gene_id_list_updated))
+            unique_gene_id = list(set(gene_id_list_updated)) # set might change gene order!
 
             if len(gene_id_list_updated) != 0:
-                if len(unique_gene_id) != 1 and unique_gene_id[0] != gene_name:
+                # unique_gene_id might not have the same gene order so:
+                # todo double check if gene_id_list_updated[0] is the gene we want to check
+                if len(unique_gene_id) != 1 and gene_id_list_updated[0] != gene_name:
                     e = "Gene_id not match input file after overlapping"
                     log_output = gene_name + "\t" + str(e) + "\t" + "gene_id_match_after_overlap"
                     log_file_handle.write(log_output)
         else:
-            guide_exon_list_updated = guide_exon_list
-
+            guide_exon_list_updated = []
+            unique_gene_id = [gene_name]
 
             ######### Getting guide info
 
