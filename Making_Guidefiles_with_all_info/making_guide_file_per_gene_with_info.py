@@ -38,34 +38,17 @@ def build_exons_index(exons):
     return chromosomes
 
 
-def making_guide_file_with_info(guide_file_path, guide_file_info_directory, chromosomes, sequence_dict, exon_dict):
-    ######### Input_file
-    guide_file = guide_file_path
-
-    #########  making of  Output_file and log directory
+def making_guide_file_with_info(guide_file, output_file_path, chromosomes, sequence_dict, exon_dict):
+    if not os.path.exists(output_file_path):
+        exit("Guide file info dir doesnot exist %s" % output_file_path)
 
     gene_name = os.path.basename(guide_file).split(".")[0]
-    gene_output_file_name = gene_name + "_guides_info.txt"
 
-    if not os.path.exists(guide_file_info_directory):
-        exit("Guide file info dir doesnot exist %s" % guide_file_info_directory)
 
-    output_file_path = guide_file_info_directory
-    gene_output_file_name_path = os.path.join(output_file_path, gene_output_file_name)
-    gene_output_file_handle = open(gene_output_file_name_path, "w")
-
-    log_file_name = os.path.join(guide_file_info_directory, "log_file_exceptions.txt")
+    log_file_name = os.path.join(output_file_path, "log_file_exceptions.txt")
     log_file_handle = open(log_file_name, "a")
 
-    header = ["Gene_id", "Guide_seq_with_ngg", "Guide_seq", "Guide_chr_no", "Guide_start", "Guide_stop", "Guide_strand",
-              "Guide_uniqness",
-              "Guide_exon_list", "Exon_biotype_list",
-              "cutsite18", "dist_cds_start_cutsite", "dist_cds_stop_cutsite",
-              "Total_transcript_count", "Transcript_list", "Total_exons_in_transcript_list",
-              "Exon_rank_in_transcript_list",
-              "microhomology_seq"]
-    header_output = "\t".join(header) + "\n"
-    gene_output_file_handle.write(header_output)
+    buffer = []
 
     guide_input_file = open(guide_file)
     for line in guide_input_file:
@@ -170,15 +153,28 @@ def making_guide_file_with_info(guide_file_path, guide_file_info_directory, chro
                 [unique_gene_id[0], guide_seq_with_ngg, guide_seq, guide_chr, guide_start, guide_stop, guide_strand,
                  guide_uniq, str(guide_exon_list_updated), str(exon_biotype_list), str(guide_cutsite18),
                  "\t".join(cds_start_stop_cut_site), "\t".join(exon_genomic_features), microhomology_sequence])
-            gene_output_file_handle.write(output)
-            gene_output_file_handle.write("\n")
+            buffer.append(output)
+            # gene_output_file_handle.write("\n")
 
         except Exception as e:
             log_file_handle.write(gene_name + "\t" + str(e) + "\t" + "Guide_info_problem" + "\n")
 
-    log_file_handle.close()
-    gene_output_file_handle.close()
+    if buffer:
+        gene_output_file_name = gene_name + "_guides_info.txt"
+        gene_output_file_name_path = os.path.join(output_file_path, gene_output_file_name)
+        with open(gene_output_file_name_path, "w") as gene_output_file_handle:
+            header = ["Gene_id", "Guide_seq_with_ngg", "Guide_seq", "Guide_chr_no", "Guide_start", "Guide_stop", "Guide_strand",
+                      "Guide_uniqness",
+                      "Guide_exon_list", "Exon_biotype_list",
+                      "cutsite18", "dist_cds_start_cutsite", "dist_cds_stop_cutsite",
+                      "Total_transcript_count", "Transcript_list", "Total_exons_in_transcript_list",
+                      "Exon_rank_in_transcript_list",
+                      "microhomology_seq"]
+            header_output = "\t".join(header) + "\n"
+            gene_output_file_handle.write(header_output)
+            gene_output_file_handle.write('\n'.join(buffer))
 
+    log_file_handle.close()
 
 def prepareOutputDirectory(params):
     ensembl_relase = params['ensembl_release']
