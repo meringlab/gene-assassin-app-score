@@ -1,9 +1,31 @@
-import os, sys
-import ast
+import os
 import math
 import gzip
 from math import exp
 from re import findall
+
+def parse_as_list(literal):
+    '''
+    WARNING: it assumes all elements are of the same type (strings or numbers) !
+
+    :param literal: a string representation of a list "['ENST00000373020', 'ENST00000612152']"
+    :return: a list of strings or numbers
+    '''
+    result = literal.strip('[]').replace(' ', '')
+    convert_to_numbers = True
+    if "'" in result or '"' in result:
+        convert_to_numbers = False
+    result = result.replace("'", '').replace('"', '').split(',')
+    if not convert_to_numbers:
+        return result
+    for i in range(len(result)):
+        try:
+            e = int(result[i])
+        except:
+            e = float(result[i])
+        result[i] = e
+    return result
+
 
 def search_file_path (name_of_file, search_path_dir):
     file_abs_path = ""
@@ -167,7 +189,7 @@ def calculate_proximity_to_CDS_for_transcript_list_modified (transcript_list_inp
     
 
     
-    transcript_list = ast.literal_eval(transcript_list_input)
+    transcript_list = parse_as_list(transcript_list_input)
     
     if len(transcript_list) == 0:
         avg_penalty_score_prox_CDS = -1
@@ -228,10 +250,10 @@ def calculate_proximity_splice_site (dist_cutsite_exon_cds_start, dist_cutsite_e
 def calculate_proximity_splice_site_for_exon_rank_list_modified (exon_rank_list_input, dist_cutsite_exon_cds_start_list_input, dist_cutsite_exon_cds_stop_list_input, transcript_list_input, transcript_cds_info_dict):
     
     
-    exon_list = ast.literal_eval(exon_rank_list_input)
-    transcript_list = ast.literal_eval(transcript_list_input)
-    dist_cutsite_exon_cds_start_list  = ast.literal_eval(dist_cutsite_exon_cds_start_list_input)
-    dist_cutsite_exon_cds_stop_list = ast.literal_eval(dist_cutsite_exon_cds_stop_list_input)
+    exon_list = parse_as_list(exon_rank_list_input)
+    transcript_list = parse_as_list(transcript_list_input)
+    dist_cutsite_exon_cds_start_list  = parse_as_list(dist_cutsite_exon_cds_start_list_input)
+    dist_cutsite_exon_cds_stop_list = parse_as_list(dist_cutsite_exon_cds_stop_list_input)
     
     
     if len(exon_list) == len(transcript_list): ###### no, non-coding exon
@@ -304,13 +326,13 @@ def calculate_exon_ranking_score_modified (exon_ranks) :
     
     ##### there can be no cases of nan
     
-    exon_ranks_unstring = ast.literal_eval(exon_ranks)
+    exon_ranks_unstring = parse_as_list(exon_ranks)
     exon_rank_list = [float(x) for x in exon_ranks_unstring]
     
     
     for x in exon_rank_list:
         if x < 0 or math.isnan(x):
-            raise Exception 
+            raise Exception('invalid exon rank: %s %s' %(x, exon_ranks))
     
     
     
@@ -343,7 +365,7 @@ def calculate_exon_ranking_score_modified (exon_ranks) :
 def calculate_transcript_coverage_score_modified (transcript_ids,transcript_count):
     
     
-    transcript_ids_unstring = ast.literal_eval(transcript_ids)
+    transcript_ids_unstring = parse_as_list(transcript_ids)
     
     transcript_covered = len(transcript_ids_unstring)
     transcript_count = float(transcript_count)
@@ -353,7 +375,7 @@ def calculate_transcript_coverage_score_modified (transcript_ids,transcript_coun
     assert(transcript_covered <= transcript_count) , "Transcript_count < transcipt_id_list"
     
     if "nan" in transcript_ids_unstring:
-        raise Exception
+        raise Exception('"nan" in transcript_ids: %s' % transcript_ids)
         
     
     transcript_covered_ratio = round(transcript_covered/transcript_count,2)
