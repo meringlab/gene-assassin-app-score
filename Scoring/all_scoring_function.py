@@ -13,6 +13,8 @@ def parse_as_list(literal):
     :param literal: a string representation of a list "['ENST00000373020', 'ENST00000612152']"
     :return: a list of strings or numbers
     '''
+    if '[]' == literal:
+        return []
     result = literal.strip('[]').replace(' ', '')
     convert_to_numbers = True
     if "'" in result or '"' in result:

@@ -163,7 +163,8 @@ if __name__ == "__main__":
     logging.info('guide info directory: %s', guides_info_dir)
     # for input_file in ['ENSG00000005001_guides_info.txt']:
     # for input_file in ['ENSDARG00000000966_guides_info.txt']:
-    for input_file in sorted(os.listdir(guides_info_dir))[:50]:
+    # for input_file in ['ENSDARG00000000189_guides_info.txt']:
+    for input_file in sorted(os.listdir(guides_info_dir)):
         input_file_path = os.path.join(guides_info_dir, input_file)
         logging.info('scoring %s', input_file_path)
 
