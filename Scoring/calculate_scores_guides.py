@@ -46,8 +46,8 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
         microhomogy_guide = l[-1]
 
         ######### Making the string as lisT
-        exon_list_unstring = ast.literal_eval(exon_list)
-        transcript_list_unstring = ast.literal_eval(transcript_id_list)
+        exon_list_unstring = fn_scoring.parse_as_list(exon_list) # ast.literal_eval(exon_list)
+        transcript_list_unstring = fn_scoring.parse_as_list(transcript_id_list) # ast.literal_eval(transcript_id_list)
 
         ###### in case of there is no proten-coding transcript or single non-coding exons
         if len(exon_list_unstring) == 0 or len(transcript_list_unstring) == 0:
@@ -115,7 +115,7 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
 if __name__ == "__main__":
     if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]):
         exit('missing config file!')
-    logging.basicConfig(filename=None, level=getattr(logging, 'DEBUG', None),
+    logging.basicConfig(filename=None, level=getattr(logging, 'INFO', None),
                         format='%(asctime)s %(levelname)s %(funcName)s %(message)s')
 
     params = json.load(open(sys.argv[1]))
@@ -162,7 +162,8 @@ if __name__ == "__main__":
     guides_info_dir = os.path.join(base_path, 'Guide_files_with_information/')
     logging.info('guide info directory: %s', guides_info_dir)
     # for input_file in ['ENSG00000005001_guides_info.txt']:
-    for input_file in sorted(os.listdir(guides_info_dir))[4:]:
+    # for input_file in ['ENSDARG00000000966_guides_info.txt']:
+    for input_file in sorted(os.listdir(guides_info_dir))[:50]:
         input_file_path = os.path.join(guides_info_dir, input_file)
         logging.info('scoring %s', input_file_path)
 
