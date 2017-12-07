@@ -202,7 +202,7 @@ def calculate_proximity_splice_site (dist_cutsite_exon_cds_start, dist_cutsite_e
 
 
 def calculate_proximity_splice_site_for_exon_rank_list_modified (exon_rank_list_input, dist_cutsite_exon_cds_start_list_input, dist_cutsite_exon_cds_stop_list_input, transcript_list_input, transcript_cds_info_dict):
-    exon_list = parse_as_list(exon_rank_list_input)
+    exon_list = map(int, parse_as_list(exon_rank_list_input))
     transcript_list = parse_as_list(transcript_list_input)
     dist_cutsite_exon_cds_start_list  = parse_as_list(dist_cutsite_exon_cds_start_list_input)
     dist_cutsite_exon_cds_stop_list = parse_as_list(dist_cutsite_exon_cds_stop_list_input)
