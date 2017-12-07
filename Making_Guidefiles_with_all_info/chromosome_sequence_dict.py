@@ -2,17 +2,21 @@
 import sys
 import gzip
 import timeit
+import os
 from Bio import SeqIO
 from cStringIO import StringIO
 import io
+import logging
 
+logging.basicConfig(filename=None, level=getattr(logging, 'INFO', None),
+                        format='%(asctime)s %(funcName)s %(levelname)s %(message)s')
 
 def load_chromosome_sequence_dict_bio(fasta_filepath):
     start = timeit.default_timer()
     with gzip.open(fasta_filepath, "rt") as handle:  # only "r" doesnt work in python 3:
         chromosome_sequence_dict = SeqIO.to_dict(SeqIO.parse(handle, "fasta"))
     stop = timeit.default_timer()
-    print('time to build sequence index using SeqIO %dsec' % (stop - start))
+    logging.info('time to build sequence index using SeqIO %dsec', stop - start)
     return chromosome_sequence_dict
 
 
@@ -25,15 +29,9 @@ def load_chromosome_sequence_dict(fasta_filepath):
     # if not os.path.exists(fasta_filepath):
     #     exit("\t ... fasta file does not exist %s." % fasta_filepath)
     start = timeit.default_timer()
-
-    try:
-        gz = gzip.open(fasta_filepath, "rb")
-    except:
-        print "failed to read fasta file: ", fasta_filepath, sys.exc_info()[0]
-        raise
-
     seq= ""
     chromosome_sequence_dict = {}
+    gz = gzip.open(fasta_filepath, "rb")
     input_file_handle = io.BufferedReader(gz)
     for line in input_file_handle:
         if line.startswith(">"):
@@ -53,8 +51,8 @@ def load_chromosome_sequence_dict(fasta_filepath):
     chromosome_sequence_dict[chromosome_name] = seq
 
     stop = timeit.default_timer()
-    print('time to build sequence index %dsec' % (stop - start))
-
+    logging.info('time to build sequence index %dsec', stop - start)
+    # close gz & input_file_handle ?
     return chromosome_sequence_dict
 
 def load_chromosome_sequence_dict_from_fasta(fasta_uncompressed_filepath):
@@ -91,7 +89,7 @@ def load_chromosome_sequence_dict_from_fasta(fasta_uncompressed_filepath):
     chromosome_sequence_dict[chromosome_name] = seq
 
     stop = timeit.default_timer()
-    print('time to build sequence index using StringIO %dsec' % (stop - start))
+    logging.info('time to build sequence index using StringIO on uncompressed fasta file %dsec', stop - start)
 
     return chromosome_sequence_dict
 
@@ -103,19 +101,13 @@ def load_chromosome_sequence_dict_list(fasta_filepath):
     :return: dict { chromosome -> dna sequence }
     '''
 
-    # if not os.path.exists(fasta_filepath):
-    #     exit("\t ... fasta file does not exist %s." % fasta_filepath)
+    if not os.path.exists(fasta_filepath):
+        exit("\t ... fasta file does not exist %s." % fasta_filepath)
+
     start = timeit.default_timer()
-
-    try:
-        gz = gzip.open(fasta_filepath, "rb")
-    except:
-        print "failed to read fasta file: ", fasta_filepath, sys.exc_info()[0]
-        raise
-
     buffer = []
     chromosome_sequence_dict = {}
-
+    gz = gzip.open(fasta_filepath, "rb")
     input_file_handle = io.BufferedReader(gz)
     for line in input_file_handle:
         if line.startswith(">"):
@@ -139,7 +131,7 @@ def load_chromosome_sequence_dict_list(fasta_filepath):
     chromosome_sequence_dict[chromosome_name] = seq
 
     stop = timeit.default_timer()
-    print('time to build sequence index using join on list %dsec' % (stop - start))
+    logging.info('time to build sequence index using join on list %dsec', stop - start)
 
     return chromosome_sequence_dict
 
@@ -150,7 +142,7 @@ def test_read_gzip(fasta_filepath):
             if line[0] == '>':
                 pass
     stop = timeit.default_timer()
-    print('test time on %s %dsec' % (fasta_filepath, stop - start))
+    logging.info('test time on %s %dsec', fasta_filepath, stop - start)
 
 def test_read_gzip_buffer(fasta_filepath):
     c = 0
@@ -161,7 +153,7 @@ def test_read_gzip_buffer(fasta_filepath):
             if line[0] == '>':
                 c+=1
     stop = timeit.default_timer()
-    print('test buffer read time on %s %dsec' % (fasta_filepath, stop - start))
+    logging.info('test buffer read time on %s %dsec', fasta_filepath, stop - start)
 
 
 if __name__ == '__main__':
