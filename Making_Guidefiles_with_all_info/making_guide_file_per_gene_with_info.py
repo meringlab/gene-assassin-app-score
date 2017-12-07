@@ -109,6 +109,9 @@ def making_guide_file_with_info(guide_file, output_file_path, chromosomes, seque
             else:
                 guide_exon_list_updated = []
                 unique_gene_id = [gene_name]
+            if not unique_gene_id:  # will be empty for NMD genes for example
+                logging.debug('skipping %s', guide_seq)
+                continue
 
             try:
                 # Guide_uniqueness
@@ -188,8 +191,9 @@ def generate_guides(params, exons_index, sequence_dict, output_directory, exon_d
     logging.info('reading guides from %s', guides_directory)
     # weird cases for testing:
     # for guide_file_path in ['ENSDARG00000100456.guides.txt']: # has single nucleotide exon
+    # for guide_file_path in ['ENSG00000026036.guides.txt']: # has single nucleotide exon
     for guide_file_path in os.listdir(guides_directory):
-        logging.info('processing file %s', guide_file_path)
+        logging.info('processing %s', guide_file_path)
         making_guide_file_with_info(os.path.join(guides_directory, guide_file_path), output_directory, exons_index,
                                     sequence_dict, exon_dict)
         num_processed += 1
@@ -204,8 +208,8 @@ if __name__ == "__main__":
     if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]):
         exit('missing config file!')
 
-    logging.basicConfig(filename=None, level=getattr(logging, 'INFO', None),
-                        format='%(asctime)s %(funcName)s %(levelname)s %(message)s')
+    logging.basicConfig(filename=None, level=getattr(logging, 'DEBUG', None),
+                        format='%(asctime)s %(levelname)s %(funcName)s %(message)s')
     params = json.load(open(sys.argv[1]))
     logging.info("computing info files, parameters: %s", params)
     output_directory = prepareOutputDirectory(params)
@@ -216,7 +220,7 @@ if __name__ == "__main__":
     gtf_file_path_modified = gtf_file_path.replace("Raw_data_files", "Processed_data_files")
     parsed_file_path = os.path.join(os.path.dirname(gtf_file_path_modified),
                                     'parsed_' + gtf_file_name.replace('.gz', '.txt'))
-    logging.info('loading data into memory')
+    logging.info('loading exons from %s', parsed_file_path)
     exon_dict = ExonsInfo(parsed_file_path)
     exons_index = build_exons_index(exon_dict)
 
@@ -225,7 +229,11 @@ if __name__ == "__main__":
     fasta_file_name = os.path.splitext(compressed_fasta_file_name)[0]
     fasta_file_path = os.path.join('output', params['ensembl_release'], params['species_name'], 'Raw_data_files',
                                    fasta_file_name)
+    logging.info('loading fasta from %s', fasta_file_name)
     sequence_dict = chromosome_sequence_dict.load_chromosome_sequence_dict_from_fasta(fasta_file_path)
+    # fasta_file_path = '../ga-pipeline/input/human/fasta/Homo_sapiens.GRCh38.dna.chromosome.20.fa.gz'
+    # logging.info('loading fasta from %s', fasta_file_name)
+    # sequence_dict = chromosome_sequence_dict.load_chromosome_sequence_dict_list(fasta_file_path)
 
-    logging.info('ready to generate info')
+    logging.info('generating guides info')
     generate_guides(params, exons_index, sequence_dict, output_directory, exon_dict)
