@@ -3,29 +3,27 @@ import sys
 import json
 import timeit
 import ast
+import logging
 
 import all_scoring_function as fn_scoring
 from Universal import universal_function as fn_universal
 
 
-######  Main function to calculate the scores
 def calculate_score_guide_main(input_file_path, output_file_path, output_file_descript, transcript_cds_info_dict,
                                protein_domain_info_dict, snv_dict):
-    print("DEBUG processing %s" % input_file_path)
     output_file_name, log_file_name = fn_universal.making_output_log_file_names(input_file_path, output_file_path,
                                                                                 output_file_descript)
 
-    input_file_handle = open(input_file_path)
-    output_log_file_handle = open(log_file_name, "a")
-
     gene_name = os.path.basename(input_file_path).split("_")[0]
+    input_file_handle = open(input_file_path)
 
     line = input_file_handle.readline() # throw away the header
     if not line.startswith('Gene_id'):
-        print('WARN seems like header is missing %s' % line)
+        logging.warning('WARN seems like header is missing %s', line)
 
     output_buffer = []
     for line in input_file_handle:
+        logging.debug('line: %s', line)
         l = line.strip().split('\t')
         if len(l) < 2:
             continue
@@ -97,8 +95,7 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
                 output_buffer.append(output)
 
             except Exception as e:
-                output_exception = gene_name + "\t" + str(e) + "\t" + guide_seq + "\n"
-                output_log_file_handle.write(output_exception)
+                logging.exception('failed to score %s %s, %s', gene_name, guide_seq, e)
 
 
     if output_buffer:
@@ -110,15 +107,19 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
         with open(output_file_name, "w") as output_file_handle:
             output_file_handle.write(output_header)
             output_file_handle.writelines(output_buffer)
+    else:
+        logging.warning('no scores for %s', gene_name)
 
-
-    output_log_file_handle.close()
-
+    input_file_handle.close()
 
 if __name__ == "__main__":
     if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]):
         exit('missing config file!')
+    logging.basicConfig(filename=None, level=getattr(logging, 'DEBUG', None),
+                        format='%(asctime)s %(levelname)s %(funcName)s %(message)s')
+
     params = json.load(open(sys.argv[1]))
+    logging.info("computing scores, parameters: %s", params)
 
     ensembl_relase = params['ensembl_release']
     species = params['species_name']
@@ -126,46 +127,51 @@ if __name__ == "__main__":
     base_path = os.path.join('output', ensembl_relase, species)
     dir_to_be_created = "Guide_files_with_scores"
 
-    guide_file_score_directory = os.path.join(base_path, dir_to_be_created)
+    output_file_path = os.path.join(base_path, dir_to_be_created)
     try:
-        if not os.path.exists(guide_file_score_directory):
-            os.makedirs(guide_file_score_directory)
+        if not os.path.exists(output_file_path):
+            os.makedirs(output_file_path)
     except Exception as e:
-        exit("\t ... Cannot create output directories %s" % guide_file_score_directory)
+        exit("\t ... Cannot create output directories %s" % output_file_path)
 
-    output_file_path = guide_file_score_directory
     output_file_descript = "_scores.txt"
 
     start = timeit.default_timer()
 
     transcript_cds_file_name = params['transcript_cds_file_name']
+    logging.info('loading transcripts from %s', transcript_cds_file_name)
     transcript_cds_info_dict = fn_scoring.make_transcript_cds_info_dict(transcript_cds_file_name, base_path)
 
     protein_dir_path = os.path.join('input', ensembl_relase, species, "proteins")
+    logging.info('loading proteins from %s', protein_dir_path)
     protein_domain_info_dict = fn_scoring.make_protein_dict(protein_dir_path)
 
     compressed_variation_filepath = os.path.join('output', ensembl_relase, species, 'Raw_data_files',
                                                  os.path.basename(params['GVF_file']))
     variation_filepath = os.path.splitext(compressed_variation_filepath)[0]
+    logging.info('loading variation from %s', compressed_variation_filepath)
     snv_dict = fn_scoring.make_var_dict(variation_filepath)
     # snv_dict = {}
 
     stop = timeit.default_timer()
-    print('time to prepare for computation %dsec' % (stop - start))
+    logging.info('time to prepare for computation %dsec' % (stop - start))
 
     start = timeit.default_timer()
 
     num_processed = 0
     guides_info_dir = os.path.join(base_path, 'Guide_files_with_information/')
-    # for input_file in ['ENSG00000000460_guides_info.txt']: # guide inside an intron!?!
+    logging.info('guide info directory: %s', guides_info_dir)
+    # for input_file in ['ENSG00000005001_guides_info.txt']:
     for input_file in sorted(os.listdir(guides_info_dir))[4:]:
         input_file_path = os.path.join(guides_info_dir, input_file)
+        logging.info('scoring %s', input_file_path)
+
         calculate_score_guide_main(input_file_path, output_file_path, output_file_descript, transcript_cds_info_dict,
                                    protein_domain_info_dict, snv_dict)
         num_processed += 1
         if num_processed % 10 == 0:
             stop = timeit.default_timer()
-            print('%d processed in %dsec' % (num_processed, stop - start))
+            logging.info('%d processed in %dsec', num_processed, stop - start)
 
     stop = timeit.default_timer()
-    print('time to compute scores %dsec' % (stop - start))
+    logging.info('time to compute scores %dsec', stop - start)

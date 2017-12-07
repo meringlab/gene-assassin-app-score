@@ -165,7 +165,8 @@ def making_guide_file_with_info(guide_file, output_file_path, chromosomes, seque
             header_output = "\t".join(header) + "\n"
             gene_output_file_handle.write(header_output)
             gene_output_file_handle.write('\n'.join(buffer))
-
+    else:
+        logging.info('no guides for this gene %s', gene_name)
 
 def prepareOutputDirectory(params):
     ensembl_relase = params['ensembl_release']
@@ -191,7 +192,7 @@ def generate_guides(params, exons_index, sequence_dict, output_directory, exon_d
     logging.info('reading guides from %s', guides_directory)
     # weird cases for testing:
     # for guide_file_path in ['ENSDARG00000100456.guides.txt']: # has single nucleotide exon
-    # for guide_file_path in ['ENSG00000026036.guides.txt']: # has single nucleotide exon
+    # for guide_file_path in ['ENSG00000026036.guides.txt']: # NMD gene
     for guide_file_path in os.listdir(guides_directory):
         logging.info('processing %s', guide_file_path)
         making_guide_file_with_info(os.path.join(guides_directory, guide_file_path), output_directory, exons_index,
