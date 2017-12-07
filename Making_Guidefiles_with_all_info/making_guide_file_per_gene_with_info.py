@@ -148,7 +148,7 @@ def making_guide_file_with_info(guide_file, output_file_path, chromosomes, seque
                 # gene_output_file_handle.write("\n")
 
             except Exception as e:
-                logging.error('failed to collect info on %s - %s, error: %s', gene_name, line, e)
+                logging.exception('failed to collect info on %s - %s, error: %s', gene_name, line, e)
 
     if buffer:
         gene_output_file_name = gene_name + "_guides_info.txt"
@@ -178,7 +178,7 @@ def prepareOutputDirectory(params):
             logging.info('creating output directory %s', guide_file_info_directory)
             os.makedirs(guide_file_info_directory)
     except Exception as e:
-        logging.error('Cannot create output directories %s', e)
+        logging.exception('Cannot create output directories %s', e)
         exit("\t ... Cannot create output directories %s" % guide_file_info_directory)
 
     return guide_file_info_directory
