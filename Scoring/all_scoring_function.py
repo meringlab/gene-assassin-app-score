@@ -8,6 +8,8 @@ def parse_as_list(literal):
     '''
     WARNING: it assumes all elements are of the same type (strings or numbers) !
 
+    An alternative is ast.literal_eval but this is about 20 times faster.
+
     :param literal: a string representation of a list "['ENST00000373020', 'ENST00000612152']"
     :return: a list of strings or numbers
     '''
@@ -347,121 +349,93 @@ def calculate_score_protein_domains (cutsite_18, gene_id,protein_domain_info_dic
 
     return 0
 
-    
-def  get_microhomology_out_of_frame_score (seq):
 
-    length_weight=20.0
-    left=30 # Insert the position expected to be broken.
-    right=len(seq)-int(left)
-    
-    
+def get_microhomology_out_of_frame_score(seq):
+    length_weight = 20.0
+    left = 30  # Insert the position expected to be broken.
+    right = len(seq) - left
+
     output_list_before_duplication = []
-    
-    for k in range(2,left)[::-1]:
-        for j in range(left,left+right-k+1): 
-            for i in range(0,left-k+1):
-                if seq[i:i+k]==seq[j:j+k]:
-                    length=j-i
-                    
-                    sequence_list_before_duplication = [seq[i:i+k],str(i),str(i+k),str(j),str(j+k),str(length)]
-                    
+
+    for k in range(2, left)[::-1]:
+        for j in range(left, left + right - k + 1):
+            for i in range(0, left - k + 1):
+                if seq[i:i + k] == seq[j:j + k]:
+                    length = j - i
+
+                    sequence_list_before_duplication = [seq[i:i + k], i, i + k, j, j + k, length]
+
                     output_list_before_duplication.append(sequence_list_before_duplication)
-                    
-    
-    
+
     ## After searching out all microhomology patterns, duplication should be removed!!
-    if output_list_before_duplication !="":
-        
-        sum_score_3=0
-        sum_score_not_3=0
-        
+    if output_list_before_duplication != "":
+
+        sum_score_3 = 0
+        sum_score_not_3 = 0
+
         for i in range(len(output_list_before_duplication)):
-            
-            n=0
-            score_3=0
-            score_not_3=0
-            
-            line= output_list_before_duplication[i]   ########### first line
-            
-            scrap=line[0]
-            left_start=int(line[1])
-            left_end=int(line[2])
-            right_start=int(line[3])
-            right_end=int(line[4])
-            length=int(line[5])
-    
-        
+
+            n = 0
+            score_3 = 0
+            score_not_3 = 0
+
+            line = output_list_before_duplication[i]  ########### first line
+
+            scrap = line[0]
+            left_start = line[1]
+            left_end = line[2]
+            right_start = line[3]
+            right_end = line[4]
+            length = line[5]
+
             for j in range(i):
-            
-                line_ref= output_list_before_duplication[j]   ######### line to be comapred
-                
-                left_start_ref=int(line_ref[1])
-                left_end_ref=int(line_ref[2])
-                right_start_ref=int(line_ref[3])
-                right_end_ref=int(line_ref[4])
-                
-                
-                if (left_start >= left_start_ref) and (left_end <= left_end_ref) and (right_start >= right_start_ref) and (right_end <= right_end_ref):
-                    
-                    if (left_start - left_start_ref)==(right_start - right_start_ref) and (left_end - left_end_ref)==(right_end -right_end_ref):
-                        
-                        n+=1
-                    
-                else: pass
-            
-            
+                line_ref = output_list_before_duplication[j]  ######### line to be comapred
+
+                left_start_ref = line_ref[1]
+                left_end_ref = line_ref[2]
+                right_start_ref = line_ref[3]
+                right_end_ref = line_ref[4]
+
+                if (left_start >= left_start_ref) and (left_end <= left_end_ref) and (
+                    right_start >= right_start_ref) and (right_end <= right_end_ref):
+
+                    if (left_start - left_start_ref) == (right_start - right_start_ref) and (
+                        left_end - left_end_ref) == (right_end - right_end_ref):
+                        n += 1
+
             if n == 0:
-                
-                length_factor = round(1/exp((length)/(length_weight)),3)
-                num_GC=len(findall('G',scrap))+len(findall('C',scrap))
-                common_score = 100*length_factor*((len(scrap)-num_GC)+(num_GC*2))
-                
-                if (length % 3)==0:
-            
+                length_factor = round(1 / exp((length) / (length_weight)), 3)
+                num_GC = len(findall('G', scrap)) + len(findall('C', scrap))
+                common_score = 100 * length_factor * ((len(scrap) - num_GC) + (num_GC * 2))
+
+                if (length % 3) == 0:
                     score_3 = common_score
-                    
-                elif (length % 3)!=0:
-                
-                    
+                else: # elif (length % 3) != 0:
                     score_not_3 = common_score
-                    
-                
-                
-            
-            sum_score_3+=score_3
-            sum_score_not_3+=score_not_3
-            
-        
-    
-        microhomology_score = sum_score_3+sum_score_not_3
-        
-        
-        if microhomology_score!= 0:
-            out_of_frame_score = round((sum_score_not_3)*100/(microhomology_score),2)
-            
+
+            sum_score_3 += score_3
+            sum_score_not_3 += score_not_3
+
+        microhomology_score = sum_score_3 + sum_score_not_3
+
+        if microhomology_score != 0:
+            out_of_frame_score = round(sum_score_not_3 * 100 / microhomology_score, 2)
         else:
             out_of_frame_score = "nan"
-        
-        
-        
-    return (microhomology_score,out_of_frame_score)
+
+    return (microhomology_score, out_of_frame_score)
 
 
 def calculate_microhomology_score (seq):
-    microhomology_out_frame_score =  get_microhomology_out_of_frame_score(seq = seq)
-    microhomology_score = microhomology_out_frame_score[0]
-    out_of_frame_score = microhomology_out_frame_score[1]
-    
-    if out_of_frame_score == "nan":
-        calculated_micrhomology_score = "nan"
-    else:
-        if  out_of_frame_score > 66.0 :
-            calculated_micrhomology_score = 0.5
-        else:
-            calculated_micrhomology_score = 0
-            
-    return (calculated_micrhomology_score)
+    microhomology_score, out_of_frame_score = get_microhomology_out_of_frame_score(seq)
 
+    if out_of_frame_score == "nan":
+        return "nan"
+
+    if out_of_frame_score > 66.0:
+        return 0.5
+
+    return 0
 
 
 def calculate_snp_score(guide_chr_input, guide_cutsite_18_input,snv_dict):
