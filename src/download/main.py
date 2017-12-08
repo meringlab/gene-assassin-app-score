@@ -50,17 +50,10 @@ def parse_gtf(params):
     new_file_name = 'parsed_' + gtf_file_name.replace('.gz', '.txt')
     new_file_path = os.path.join(new_basefile_path, new_file_name)
 
-    try:
-        if not os.path.exists(new_basefile_path):
-            os.makedirs(new_basefile_path)
-    except Exception as e:
-        logging.exception("Cannot create a directory %s. %s" % new_basefile_path, e)
-        exit()
+    if not os.path.exists(new_basefile_path):
+        os.makedirs(new_basefile_path)
 
     # Processing gtf file
-
-    ## Input gtf file
-
     input_file_handle = gzip.open(gtf_file_path, 'rb')
 
     ### Regular expression to extract gene features

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+source activate ga-scores
+export PYTHONPATH=.
+
 # Step 1. download
 ## Download the raw files from ENSEMBL ....
 python ./src/download/main.py conf/drerio.json
