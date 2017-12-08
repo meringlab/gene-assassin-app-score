@@ -2,10 +2,8 @@ import os
 import sys
 import json
 import timeit
-import ast
 import logging
-
-import all_scoring_function as fn_scoring
+import score_utils
 from Universal import universal_function as fn_universal
 
 
@@ -46,8 +44,8 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
         microhomogy_guide = l[-1]
 
         ######### Making the string as lisT
-        exon_list_unstring = fn_scoring.parse_as_list(exon_list) # ast.literal_eval(exon_list)
-        transcript_list_unstring = fn_scoring.parse_as_list(transcript_id_list) # ast.literal_eval(transcript_id_list)
+        exon_list_unstring = score_utils.parse_as_list(exon_list) # ast.literal_eval(exon_list)
+        transcript_list_unstring = score_utils.parse_as_list(transcript_id_list) # ast.literal_eval(transcript_id_list)
 
         ###### in case of there is no proten-coding transcript or single non-coding exons
         if len(exon_list_unstring) == 0 or len(transcript_list_unstring) == 0:
@@ -63,19 +61,19 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
             try:
                 #########  Genomic Context Score
 
-                guide_transcripts_prox_CDS_penalty = fn_scoring.calculate_proximity_to_CDS_for_transcript_list_modified(transcript_id_list, cutsite18, transcript_cds_info_dict)
+                guide_transcripts_prox_CDS_penalty = score_utils.calculate_proximity_to_CDS_for_transcript_list_modified(transcript_id_list, cutsite18, transcript_cds_info_dict)
 
-                guide_exons_prox_splicesite_penalty = fn_scoring.calculate_proximity_splice_site_for_exon_rank_list_modified(exon_rank_list, dist_cutsite_exon_cds_start_list_input=dist_cutsite_cds_start,                    dist_cutsite_exon_cds_stop_list_input=dist_cutsite_cds_stop,                    transcript_list_input=transcript_id_list, transcript_cds_info_dict=transcript_cds_info_dict)
+                guide_exons_prox_splicesite_penalty = score_utils.calculate_proximity_splice_site_for_exon_rank_list_modified(exon_rank_list, dist_cutsite_exon_cds_start_list_input=dist_cutsite_cds_start,                    dist_cutsite_exon_cds_stop_list_input=dist_cutsite_cds_stop,                    transcript_list_input=transcript_id_list, transcript_cds_info_dict=transcript_cds_info_dict)
 
-                guide_exon_ranking_score = fn_scoring.calculate_exon_ranking_score_modified(exon_ranks=exon_rank_list)
+                guide_exon_ranking_score = score_utils.calculate_exon_ranking_score_modified(exon_ranks=exon_rank_list)
 
-                guide_transcript_covered_score = fn_scoring.calculate_transcript_coverage_score_modified(transcript_id_list, transcript_count)
+                guide_transcript_covered_score = score_utils.calculate_transcript_coverage_score_modified(transcript_id_list, transcript_count)
 
-                domain_score = fn_scoring.calculate_score_protein_domains(cutsite18, gene_id, protein_domain_info_dict)
+                domain_score = score_utils.calculate_score_protein_domains(cutsite18, gene_id, protein_domain_info_dict)
 
-                calculated_micrhomology_score = fn_scoring.calculate_microhomology_score(seq=microhomogy_guide)
+                calculated_micrhomology_score = score_utils.calculate_microhomology_score(seq=microhomogy_guide)
 
-                snp_score = fn_scoring.calculate_snp_score(guide_chr, cutsite18, snv_dict)
+                snp_score = score_utils.calculate_snp_score(guide_chr, cutsite18, snv_dict)
 
                 # Total scores
                 scoring_list = list((guide_transcripts_prox_CDS_penalty, guide_exons_prox_splicesite_penalty,
@@ -140,17 +138,17 @@ if __name__ == "__main__":
 
     transcript_cds_file_name = params['transcript_cds_file_name']
     logging.info('loading transcripts from %s', transcript_cds_file_name)
-    transcript_cds_info_dict = fn_scoring.make_transcript_cds_info_dict(transcript_cds_file_name, base_path)
+    transcript_cds_info_dict = score_utils.make_transcript_cds_info_dict(transcript_cds_file_name, base_path)
 
     protein_dir_path = os.path.join('input', ensembl_relase, species, "proteins")
     logging.info('loading proteins from %s', protein_dir_path)
-    protein_domain_info_dict = fn_scoring.make_protein_dict(protein_dir_path)
+    protein_domain_info_dict = score_utils.make_protein_dict(protein_dir_path)
 
     compressed_variation_filepath = os.path.join('output', ensembl_relase, species, 'Raw_data_files',
                                                  os.path.basename(params['GVF_file']))
     variation_filepath = os.path.splitext(compressed_variation_filepath)[0]
     logging.info('loading variation from %s', compressed_variation_filepath)
-    snv_dict = fn_scoring.make_var_dict(variation_filepath)
+    snv_dict = score_utils.make_var_dict(variation_filepath)
     # snv_dict = {}
 
     stop = timeit.default_timer()
