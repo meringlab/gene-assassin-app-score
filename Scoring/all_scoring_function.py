@@ -3,6 +3,7 @@ import math
 import gzip
 from math import exp
 from re import findall
+import logging
 
 def parse_as_list(literal):
     '''
@@ -88,10 +89,10 @@ def make_transcript_cds_info_dict(transcript_cds_file_name, dir_path):
             # sanity check:
             if l[-2][0] == '-': # reverse strand
                 if int(cds_stop) > int(cds_start):
-                    print('ERROR cds start/stop incorrect %s' % line)
+                    logging.error('cds start/stop incorrect %s', line)
             else:
                 if int(cds_stop) < int(cds_start):
-                    print('ERROR cds start/stop incorrect %s' % line)
+                    logging.error('cds start/stop incorrect %s', line)
 
             if transcript_id not in transcript_cds_info:
                 transcript_cds_info[transcript_id] = {}
@@ -127,7 +128,7 @@ def make_protein_dict (protein_path):
                 domain_id = l[-2]
 
                 if not int(domain_start) <= int(domain_stop):
-                    print("WARN domain_start > domain_stop ")
+                    logging.warning("domain_start > domain_stop %s, %s", input_file, line)
 
                 domain_location = chr_name + ":" + domain_start + "-" + domain_stop
                 domain_id_desc = domain_name + ":" + domain_id
@@ -135,7 +136,8 @@ def make_protein_dict (protein_path):
                 if domain_location not in domains:
                     domains[domain_location] = domain_id_desc
                 else:
-                    print("WARN duplicate domain location for gene %s: %s" % (gene_id, domain_location))
+                    logging.warning("duplicate domain location for gene %s: %s", gene_id, domain_location)
+
         protein_domain_info_dict[gene_id] = domains
     return protein_domain_info_dict
     
@@ -370,7 +372,7 @@ def get_microhomology_out_of_frame_score(seq):
                     output_list_before_duplication.append(sequence_list_before_duplication)
 
     ## After searching out all microhomology patterns, duplication should be removed!!
-    if output_list_before_duplication != "":
+    if output_list_before_duplication:
 
         sum_score_3 = 0
         sum_score_not_3 = 0
@@ -448,9 +450,7 @@ def calculate_snp_score(guide_chr_input, guide_cutsite_18_input,snv_dict):
     guide_cutsite_18 = str(guide_cutsite_18_input)
 
     if guide_cutsite_18 in snv_dict[guide_chr]:
-        s = 0   ##### "snp found" ##### penalised
-    else:
-        s = 2.5  ##### no_snp_so_good
-         
-    return s
+        return 0   # "snp found" -> penalised
+
+    return 2.5  # no_snp -> no penalty
 
