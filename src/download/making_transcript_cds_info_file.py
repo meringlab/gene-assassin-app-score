@@ -57,10 +57,10 @@ if __name__ == "__main__":
     params = json.load(open(sys.argv[1]))
 
     gtf_file_name = os.path.basename(params['base_url_gtf'])
-    parset_gtf_file_name = 'parsed_' + gtf_file_name.replace('.gz', '.txt')
+    parsed_gtf_file_name = 'parsed_' + gtf_file_name.replace('.gz', '.txt')
     # "output/v85_2017/danio_rerio/v_85/Proesssed_data_files/parsed_Danio_rerio.GRCz10.85.gtf.txt"
     parsed_gtf_file_path = os.path.join('output', params['ensembl_release'], params['species_name'], 'Processed_data_files',
-                                        parset_gtf_file_name)
+                                        parsed_gtf_file_name)
     if not os.path.exists(parsed_gtf_file_path):
         exit("\t ... parsed gtf file path does not exist %s."% parsed_gtf_file_path)
 
