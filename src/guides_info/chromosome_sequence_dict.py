@@ -4,7 +4,7 @@ import gzip
 import timeit
 import os
 from Bio import SeqIO
-from cStringIO import StringIO
+from io import StringIO
 import io
 import logging
 

@@ -7,9 +7,10 @@ import logging
 import timeit
 from intervaltree import IntervalTree
 
-from exon_dict import ExonsInfo
-import chromosome_sequence_dict
-import guide_utils
+from guides_info.exon_dict import ExonsInfo
+import guides_info.chromosome_sequence_dict as chromosome_sequence_dict
+import guides_info.guide_utils as guide_utils
+import download.main as downloads
 
 
 def build_exons_index(exons):
@@ -35,10 +36,10 @@ def build_exons_index(exons):
 
 
 def making_guide_file_with_info(guide_file, output_file_path, chromosomes, sequence_dict, exon_dict):
-    if not os.path.exists(output_file_path):
-        exit("Guide file info dir doesnot exist %s" % output_file_path)
+
 
     gene_name = os.path.basename(guide_file).split(".")[0]
+    logging.debug('gene: %s', gene_name)
     buffer = []
     with open(guide_file) as guide_input_file:
         for line in guide_input_file:
@@ -213,14 +214,10 @@ if __name__ == "__main__":
                         format='%(asctime)s %(levelname)s %(funcName)s %(message)s')
     params = json.load(open(sys.argv[1]))
     logging.info("computing info files, parameters: %s", params)
+
     output_directory = prepareOutputDirectory(params)
 
-    gtf_file_name = os.path.basename(params['base_url_gtf'])
-    gtf_file_path = os.path.join('output', params['ensembl_release'], params['species_name'], 'Raw_data_files',
-                                 gtf_file_name)
-    gtf_file_path_modified = gtf_file_path.replace("Raw_data_files", "Processed_data_files")
-    parsed_file_path = os.path.join(os.path.dirname(gtf_file_path_modified),
-                                    'parsed_' + gtf_file_name.replace('.gz', '.txt'))
+    parsed_file_path = downloads.get_parsed_gtf_filepath(params)
     logging.info('loading exons from %s', parsed_file_path)
     exon_dict = ExonsInfo(parsed_file_path)
     exons_index = build_exons_index(exon_dict)
