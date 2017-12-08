@@ -4,31 +4,32 @@ import json
 import timeit
 import logging
 from scores import score_utils
+import download.main as downloads
 
 
 def get_output_filepath(guide_file, output_file_path, output_file_descript):
     gene_name = os.path.basename(guide_file).split("_")[0]
-    gene_output_file_name = gene_name + output_file_descript  ####### like "_guide_info.txt"
+    gene_output_file_name = gene_name + output_file_descript  # like "_guide_info.txt"
 
     if os.path.exists(output_file_path):
         gene_output_file_name_path = os.path.join(output_file_path, gene_output_file_name)
     else:
-        exit("Outpur file path does not exist %s" % output_file_path)
+        exit("Output file path does not exist %s" % output_file_path)
 
     return gene_output_file_name_path
 
 
 def calculate_score_guide_main(input_file_path, output_file_path, output_file_descript, transcript_cds_info_dict,
                                protein_domain_info_dict, snv_dict):
-    output_file_name, log_file_name = get_output_filepath(input_file_path, output_file_path,
-                                                          output_file_descript)
+    output_file_name = get_output_filepath(input_file_path, output_file_path, output_file_descript)
 
     gene_name = os.path.basename(input_file_path).split("_")[0]
+    logging.debug('gene %s', gene_name)
     input_file_handle = open(input_file_path)
 
     line = input_file_handle.readline() # throw away the header
     if not line.startswith('Gene_id'):
-        logging.warning('WARN seems like header is missing %s', line)
+        logging.warning('seems like header is missing %s', line)
 
     output_buffer = []
     for line in input_file_handle:
@@ -147,20 +148,21 @@ if __name__ == "__main__":
 
     start = timeit.default_timer()
 
-    transcript_cds_file_name = params['transcript_cds_file_name']
-    logging.info('loading transcripts from %s', transcript_cds_file_name)
-    transcript_cds_info_dict = score_utils.make_transcript_cds_info_dict(transcript_cds_file_name, base_path)
+    transcript_cds_filepath = downloads.get_transcript_cds_filepath(params)
+    logging.info('loading transcripts from %s', transcript_cds_filepath)
+    transcript_cds_info_dict = score_utils.make_transcript_cds_info_dict(transcript_cds_filepath)
 
     protein_dir_path = os.path.join('input', ensembl_relase, species, "proteins")
     logging.info('loading proteins from %s', protein_dir_path)
     protein_domain_info_dict = score_utils.make_protein_dict(protein_dir_path)
 
-    compressed_variation_filepath = os.path.join('output', ensembl_relase, species, 'Raw_data_files',
-                                                 os.path.basename(params['GVF_file']))
-    variation_filepath = os.path.splitext(compressed_variation_filepath)[0]
-    logging.info('loading variation from %s', compressed_variation_filepath)
-    snv_dict = score_utils.make_var_dict(variation_filepath)
-    # snv_dict = {}
+    snv_dict = {}
+    if 'GVF_file' in params:
+        compressed_variation_filepath = os.path.join('output', ensembl_relase, species, 'Raw_data_files',
+                                                     os.path.basename(params['GVF_file']))
+        variation_filepath = os.path.splitext(compressed_variation_filepath)[0]
+        logging.info('loading variation from %s', compressed_variation_filepath)
+        snv_dict = score_utils.make_var_dict(variation_filepath)
 
     stop = timeit.default_timer()
     logging.info('time to prepare for computation %dsec' % (stop - start))

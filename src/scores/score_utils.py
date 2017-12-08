@@ -66,10 +66,9 @@ def make_var_dict (variation_file_path):
     return snv_dict
 
 
-def make_transcript_cds_info_dict(transcript_cds_file_name, dir_path):
-    transcript_cds_file_path = search_file_path(transcript_cds_file_name, dir_path)
+def make_transcript_cds_info_dict(transcript_cds_file_path):
     if not transcript_cds_file_path:
-        raise Exception("Error: Transcript CDS file path not found %s" % transcript_cds_file_name)
+        raise Exception("Error: Transcript CDS file path not found %s" % transcript_cds_file_path)
 
     transcript_cds_info = {}
 
@@ -154,7 +153,7 @@ def calculate_proximity_to_CDS(transcript_id, cutsite18, transcript_cds_info_dic
     '''
     transcript_cds_data = transcript_cds_info_dict[transcript_id]["cds_start_stop_len"]
 
-    cds_start, cds_stop, cds_length = map(float, transcript_cds_data)
+    cds_start, cds_stop, cds_length = list(map(float, transcript_cds_data))
     cutsite18_float = float(cutsite18)
     cds_len_10_percent = round(0.1 * cds_length)
 
@@ -208,7 +207,7 @@ def calculate_proximity_splice_site (dist_cutsite_exon_cds_start, dist_cutsite_e
 
 
 def calculate_proximity_splice_site_for_exon_rank_list_modified (exon_rank_list_input, dist_cutsite_exon_cds_start_list_input, dist_cutsite_exon_cds_stop_list_input, transcript_list_input, transcript_cds_info_dict):
-    exon_list = map(int, parse_as_list(exon_rank_list_input))
+    exon_list = list(map(int, parse_as_list(exon_rank_list_input)))
     transcript_list = parse_as_list(transcript_list_input)
     dist_cutsite_exon_cds_start_list  = parse_as_list(dist_cutsite_exon_cds_start_list_input)
     dist_cutsite_exon_cds_stop_list = parse_as_list(dist_cutsite_exon_cds_stop_list_input)

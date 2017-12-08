@@ -30,6 +30,10 @@ def get_parsed_gtf_filepath(params):
     return join(get_processed_dir(params), PARSED_GTF)
 
 
+def get_transcript_cds_filepath(params):
+    return os.path.join(get_processed_dir(params), TRANSCRIPT_CDS_FILENAME)
+
+
 def _download_from_url(url_link, dst_dir):
     logging.info('downloading %s to %s', url_link, dst_dir)
     file_name = os.path.basename(url_link)
@@ -279,7 +283,7 @@ def _make_transcript_cds_info(params):
     # for transcript in transcript_exon_cds_length:
     #    print transcript, transcript_exon_cds_length[transcript], sum(transcript_exon_cds_length[transcript])
 
-    output_file_path = os.path.join(get_processed_dir(params), TRANSCRIPT_CDS_FILENAME)
+    output_file_path = get_transcript_cds_filepath(params)
     logging.info('creating transcript CDS info file %s', output_file_path)
 
     with open(output_file_path, "w") as output_file_handle:
