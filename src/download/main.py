@@ -55,6 +55,10 @@ def _download(params):
         # TODO we should be more careful here, and force an unzip if the gz is newer..
         call(["gunzip", destination])
 
+    if 'GVF_file' not in params:
+        logging.info('no GVF file')
+        return  # just a few species have variation files
+
     destination = _download_from_url(params['GVF_file'], dst_dir)
     if not os.path.exists(os.path.splitext(destination)[0]):
         call(["gunzip", destination])
@@ -321,6 +325,6 @@ if __name__ == '__main__':
 
     params = json.load(open(sys.argv[1]))
 
-    # _download(params)
+    _download(params)
     _parse_gtf(params)
-    # make_transcript_cds_info(params)
+    make_transcript_cds_info(params)
