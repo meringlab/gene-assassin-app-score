@@ -4,7 +4,7 @@ import json
 import timeit
 import logging
 import score_utils
-from Universal import universal_function as fn_universal
+from util import universal_function as fn_universal
 
 
 def calculate_score_guide_main(input_file_path, output_file_path, output_file_descript, transcript_cds_info_dict,
