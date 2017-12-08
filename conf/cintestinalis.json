@@ -1,0 +1,7 @@
+{
+  "assembly": "KH",
+  "ensembl_release": "v_85",
+  "species_name": "ciona_intestinalis",
+  "base_url_gtf": "rsync://ftp.ensembl.org/ensembl/pub/release-85/gtf/ciona_intestinalis/Ciona_intestinalis.KH.85.gtf.gz",
+  "DNA_top_level_fa": "rsync://ftp.ensembl.org/ensembl/pub/release-85/fasta/ciona_intestinalis/dna/Ciona_intestinalis.KH.dna.toplevel.fa.gz"
+}
