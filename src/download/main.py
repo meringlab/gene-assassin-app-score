@@ -226,7 +226,7 @@ def _parse_gtf(params):
     logging.info('parsed gtf saved at %s', output_filepath)
 
 
-def load_transcript_dicts(parsed_gtf_file_path):
+def _load_transcript_dicts(parsed_gtf_file_path):
     transcript_exon_info = {}
     transcript_exon_cds_length = {}
     input_file_handle = open(parsed_gtf_file_path)
@@ -272,10 +272,10 @@ def load_transcript_dicts(parsed_gtf_file_path):
     return (transcript_exon_info, transcript_exon_cds_length)
 
 
-def make_transcript_cds_info(params):
+def _make_transcript_cds_info(params):
     parsed_gtf_file_path = get_parsed_gtf_filepath(params)
 
-    transcript_exon_info, transcript_exon_cds_length = load_transcript_dicts(parsed_gtf_file_path)
+    transcript_exon_info, transcript_exon_cds_length = _load_transcript_dicts(parsed_gtf_file_path)
     # for transcript in transcript_exon_cds_length:
     #    print transcript, transcript_exon_cds_length[transcript], sum(transcript_exon_cds_length[transcript])
 
@@ -327,4 +327,4 @@ if __name__ == '__main__':
 
     _download(params)
     _parse_gtf(params)
-    make_transcript_cds_info(params)
+    _make_transcript_cds_info(params)
