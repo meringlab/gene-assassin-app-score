@@ -14,5 +14,5 @@ python ./src/guides_info/main.py conf/drerio.json
 # Step 3. Calculate scores for the guides
 ## Uses guides info from the Step 2
 
-python ./src/scores/score_guides.py conf/drerio.json
+python ./src/scores/main.py conf/drerio.json
 
