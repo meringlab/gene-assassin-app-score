@@ -82,7 +82,6 @@ def parse_gtf(params):
 
             ######## Searching for gene_features
 
-
             if gene_feature == "transcript":
 
                 search_obj_transcript = re.search(reg_ex_string_transcript, key_value_list_cat)
@@ -96,7 +95,6 @@ def parse_gtf(params):
                     transcript_type = search_obj_transcript.group(3)
 
                     # print gene_id, transcript_id, transcript_type
-
 
                     if transcript_type == "protein_coding":
 
@@ -138,8 +136,8 @@ def parse_gtf(params):
                         transcript_exon_no_exon_cds_dict[transcript_id_exon][exon_number_exon]["exon_id"] = {}
                         transcript_exon_no_exon_cds_dict[transcript_id_exon][exon_number_exon]["cds_location"] = []
 
-                    transcript_exon_no_exon_cds_dict[transcript_id_exon][exon_number_exon]["exon_id"][exon_id] = location
-
+                    transcript_exon_no_exon_cds_dict[transcript_id_exon][exon_number_exon]["exon_id"][
+                        exon_id] = location
 
                     ################# Doing CDS search
 
@@ -244,7 +242,8 @@ def load_transcript_dicts(parsed_gtf_file_path):
                     transcript_exon_cds_length[transcript_id] = []
 
                 transcript_exon_cds_length[transcript_id].append(exon_cds_length)
-    return (transcript_exon_info,transcript_exon_cds_length)
+    return (transcript_exon_info, transcript_exon_cds_length)
+
 
 def make_transcript_cds_info(params):
     gtf_file_name = os.path.basename(params['base_url_gtf'])
@@ -300,6 +299,7 @@ def make_transcript_cds_info(params):
         output_file_handle.write(output)
 
     output_file_handle.close()
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]):
