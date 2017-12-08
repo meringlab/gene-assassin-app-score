@@ -3,7 +3,7 @@ import sys
 import json
 import timeit
 import logging
-import score_utils
+from scores import score_utils
 
 
 def get_output_filepath(guide_file, output_file_path, output_file_descript):
