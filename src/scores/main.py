@@ -4,13 +4,24 @@ import json
 import timeit
 import logging
 import score_utils
-from util import universal_function as fn_universal
+
+
+def get_output_filepath(guide_file, output_file_path, output_file_descript):
+    gene_name = os.path.basename(guide_file).split("_")[0]
+    gene_output_file_name = gene_name + output_file_descript  ####### like "_guide_info.txt"
+
+    if os.path.exists(output_file_path):
+        gene_output_file_name_path = os.path.join(output_file_path, gene_output_file_name)
+    else:
+        exit("Outpur file path does not exist %s" % output_file_path)
+
+    return gene_output_file_name_path
 
 
 def calculate_score_guide_main(input_file_path, output_file_path, output_file_descript, transcript_cds_info_dict,
                                protein_domain_info_dict, snv_dict):
-    output_file_name, log_file_name = fn_universal.making_output_log_file_names(input_file_path, output_file_path,
-                                                                                output_file_descript)
+    output_file_name, log_file_name = get_output_filepath(input_file_path, output_file_path,
+                                                          output_file_descript)
 
     gene_name = os.path.basename(input_file_path).split("_")[0]
     input_file_handle = open(input_file_path)
