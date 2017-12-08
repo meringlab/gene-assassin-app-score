@@ -1,8 +1,6 @@
 import re
 import ast
 
-############################## Functions for microhomology scoring
-
 def ReverseComplement(seq):
     seq_dict = {'A':'T','T':'A','G':'C','C':'G','N':'N'}
     return "".join([seq_dict[base] for base in reversed(seq)])

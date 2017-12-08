@@ -9,7 +9,7 @@ from intervaltree import IntervalTree
 
 from exon_dict import ExonsInfo
 import chromosome_sequence_dict
-import making_guide_files_per_gene_functions as fn_guideinfo
+import guide_utils
 
 
 def build_exons_index(exons):
@@ -57,7 +57,7 @@ def making_guide_file_with_info(guide_file, output_file_path, chromosomes, seque
                 continue
 
             try:
-                guide_cutsite18 = fn_guideinfo.calculate_cutsite18_guide(guide_strand, guide_start, guide_stop)
+                guide_cutsite18 = guide_utils.calculate_cutsite18_guide(guide_strand, guide_start, guide_stop)
             except Exception as e:
                 logging.error('failed to find cutsite: %s - %s', gene_name, line)
                 return  # cannot continue without the cut-site
@@ -118,18 +118,18 @@ def making_guide_file_with_info(guide_file, output_file_path, chromosomes, seque
                 offtarget_profile_list = guide_offtarget_profile.split(",")
                 guide_uniq = offtarget_profile_list[1]
 
-                guide_seq_with_ngg = fn_guideinfo.get_guide_seq_with_ngg(guide_start, guide_stop, guide_strand,
+                guide_seq_with_ngg = guide_utils.get_guide_seq_with_ngg(guide_start, guide_stop, guide_strand,
                                                                          guide_chr,
                                                                          sequence_dict)
 
                 # Extracting feature
-                cds_start_stop_cut_site = fn_guideinfo.calculate_cutsite18_dist_fom_exon_cds_start_stop_for_exon_list_modified(
+                cds_start_stop_cut_site = guide_utils.calculate_cutsite18_dist_fom_exon_cds_start_stop_for_exon_list_modified(
                     guide_exon_list_updated, guide_cutsite18, exon_dict)
-                exon_genomic_features = fn_guideinfo.extract_exon_features_from_gtf_for_exonlist_modified(
+                exon_genomic_features = guide_utils.extract_exon_features_from_gtf_for_exonlist_modified(
                     guide_exon_list_updated, exon_dict)
 
                 if len(guide_exon_list_updated) != 0:
-                    microhomology_sequence = fn_guideinfo.generate_seq_for_microhomology_scoring(guide_start,
+                    microhomology_sequence = guide_utils.generate_seq_for_microhomology_scoring(guide_start,
                                                                                                  guide_stop,
                                                                                                  guide_strand,
                                                                                                  guide_chr,
