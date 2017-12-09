@@ -5,11 +5,15 @@ import timeit
 import logging
 from scores import score_utils
 import download.main as downloads
-import threading
-from queue import Queue
 
-# num_worker_threads = int(sys.argv[3])  # number of available workers (cores)
-num_worker_threads = 1
+from multiprocessing import Pool, Manager
+
+# i want to share massbigive dictionaries between processes so:
+# https://docs.python.org/3/library/multiprocessing.html#managers
+manager = Manager()
+shared_objects = manager.dict()
+
+output_file_descript = "_scores.txt"
 
 def get_output_filepath(guide_file, output_file_path, output_file_descript):
     gene_name = os.path.basename(guide_file).split("_")[0]
@@ -25,6 +29,8 @@ def get_output_filepath(guide_file, output_file_path, output_file_descript):
 
 def calculate_score_guide_main(input_file_path, output_file_path, output_file_descript, transcript_cds_info_dict,
                                protein_domain_info_dict, snv_dict):
+    logging.info('scoring %s', input_file_path)
+
     output_file_name = get_output_filepath(input_file_path, output_file_path, output_file_descript)
 
     gene_name = os.path.basename(input_file_path).split("_")[0]
@@ -126,6 +132,15 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
 
     input_file_handle.close()
 
+
+def score(input_file):
+    input_file_path = os.path.join(shared_objects['guides_info_dir'], input_file)
+    calculate_score_guide_main(input_file_path, shared_objects['output_file_path'], output_file_descript,
+                               shared_objects['transcript_cds_info_dict'],
+                               shared_objects['protein_domain_info_dict'], shared_objects['snv_dict'])
+
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]):
         exit('missing config file!')
@@ -148,17 +163,17 @@ if __name__ == "__main__":
     except Exception as e:
         exit("\t ... Cannot create output directories %s" % output_file_path)
 
-    output_file_descript = "_scores.txt"
-
+    shared_objects['output_file_path'] = output_file_path
     start = timeit.default_timer()
 
     transcript_cds_filepath = downloads.get_transcript_cds_filepath(params)
     logging.info('loading transcripts from %s', transcript_cds_filepath)
     transcript_cds_info_dict = score_utils.make_transcript_cds_info_dict(transcript_cds_filepath)
-
+    shared_objects['transcript_cds_info_dict'] = transcript_cds_info_dict
     protein_dir_path = os.path.join('input', ensembl_relase, species, "proteins")
     logging.info('loading proteins from %s', protein_dir_path)
     protein_domain_info_dict = score_utils.make_protein_dict(protein_dir_path)
+    shared_objects['protein_domain_info_dict'] = protein_domain_info_dict
 
     snv_dict = {}
     if 'GVF_file' in params:
@@ -168,45 +183,26 @@ if __name__ == "__main__":
         logging.info('loading variation from %s', compressed_variation_filepath)
         snv_dict = score_utils.make_var_dict(variation_filepath)
 
+    shared_objects['snv_dict'] = snv_dict
     stop = timeit.default_timer()
     logging.info('time to prepare for computation %dsec' % (stop - start))
 
-    q = Queue()
-
-
-    def worker():
-        while True:
-            task = q.get()
-            logging.info('scoring %s', task)
-            calculate_score_guide_main(task, output_file_path, output_file_descript,
-                                       transcript_cds_info_dict,
-                                       protein_domain_info_dict, snv_dict)
-
-            q.task_done()  # important signal for q.join() to work
-
-
-    for i in range(num_worker_threads):
-        t = threading.Thread(target=worker)
-        t.daemon = True
-        t.start()
-
-    start = timeit.default_timer()
-
+    # make the Pool of workers
+    workers_pool = Pool()  # defaults to number of cores
     num_processed = 0
     guides_info_dir = os.path.join(base_path, 'Guide_files_with_information/')
+    shared_objects['guides_info_dir'] = guides_info_dir
     logging.info('guide info directory: %s', guides_info_dir)
     # for input_file in ['ENSG00000005001_guides_info.txt']:
     # for input_file in ['ENSDARG00000000966_guides_info.txt']:
     # for input_file in ['ENSDARG00000000189_guides_info.txt']:
-    for input_file in sorted(os.listdir(guides_info_dir)):
-        input_file_path = os.path.join(guides_info_dir, input_file)
-        q.put(input_file_path)
-        num_processed += 1
-        if num_processed % 100 == 0:
-            break
-        #     stop = timeit.default_timer()
-        #     logging.info('%d processed in %dsec', num_processed, stop - start)
+    inputs = sorted(os.listdir(guides_info_dir))
 
-    q.join()
+    start = timeit.default_timer()
+
+    workers_pool.map(score, inputs)
+    workers_pool.close()
+    workers_pool.join()
+
     stop = timeit.default_timer()
     logging.info('time to compute scores %dsec', stop - start)
