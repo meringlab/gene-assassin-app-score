@@ -5,7 +5,11 @@ import timeit
 import logging
 from scores import score_utils
 import download.main as downloads
+import threading
+from queue import Queue
 
+# num_worker_threads = int(sys.argv[3])  # number of available workers (cores)
+num_worker_threads = 1
 
 def get_output_filepath(guide_file, output_file_path, output_file_descript):
     gene_name = os.path.basename(guide_file).split("_")[0]
@@ -126,7 +130,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]):
         exit('missing config file!')
     logging.basicConfig(filename=None, level=getattr(logging, 'INFO', None),
-                        format='%(asctime)s %(levelname)s %(funcName)s %(message)s')
+                        format='%(asctime)s %(levelname)s %(funcName)s %(threadName)s %(message)s')
 
     params = json.load(open(sys.argv[1]))
     logging.info("computing scores, parameters: %s", params)
@@ -167,6 +171,25 @@ if __name__ == "__main__":
     stop = timeit.default_timer()
     logging.info('time to prepare for computation %dsec' % (stop - start))
 
+    q = Queue()
+
+
+    def worker():
+        while True:
+            task = q.get()
+            logging.info('scoring %s', task)
+            calculate_score_guide_main(task, output_file_path, output_file_descript,
+                                       transcript_cds_info_dict,
+                                       protein_domain_info_dict, snv_dict)
+
+            q.task_done()  # important signal for q.join() to work
+
+
+    for i in range(num_worker_threads):
+        t = threading.Thread(target=worker)
+        t.daemon = True
+        t.start()
+
     start = timeit.default_timer()
 
     num_processed = 0
@@ -177,14 +200,13 @@ if __name__ == "__main__":
     # for input_file in ['ENSDARG00000000189_guides_info.txt']:
     for input_file in sorted(os.listdir(guides_info_dir)):
         input_file_path = os.path.join(guides_info_dir, input_file)
-        logging.info('scoring %s', input_file_path)
-
-        calculate_score_guide_main(input_file_path, output_file_path, output_file_descript, transcript_cds_info_dict,
-                                   protein_domain_info_dict, snv_dict)
+        q.put(input_file_path)
         num_processed += 1
-        if num_processed % 10 == 0:
-            stop = timeit.default_timer()
-            logging.info('%d processed in %dsec', num_processed, stop - start)
+        if num_processed % 100 == 0:
+            break
+        #     stop = timeit.default_timer()
+        #     logging.info('%d processed in %dsec', num_processed, stop - start)
 
+    q.join()
     stop = timeit.default_timer()
     logging.info('time to compute scores %dsec', stop - start)
