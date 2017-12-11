@@ -8,8 +8,9 @@ class ExonsInfo(object):
         if not os.path.exists(parsed_gtf_file_path):
             raise Exception("parsed gtf file path does not exist %s." % parsed_gtf_file_path)
 
-        self.location_exon_id = {}
         self.exon_gene_info = {}
+        self.gene_exons = {}
+        self.chromosomes = set()
         self.exon_transcript_info = {}
         self.exon_id_biotype = {}
 
@@ -33,18 +34,19 @@ class ExonsInfo(object):
             exon_cds_location = l[-1]
 
             if gene_id != "Gene_id":
-                ###### Location_exon_id
-                if exon_location not in self.location_exon_id:
-                    self.location_exon_id[exon_location] = []
-
-                if exon_id not in self.location_exon_id[exon_location]:
-                    self.location_exon_id[exon_location].append(exon_id)
+                chr = exon_location[:exon_location.index(':')]
+                self.chromosomes.add(chr)
+                if gene_id not in self.gene_exons:
+                    self.gene_exons[gene_id] = set()
+                self.gene_exons[gene_id].add(exon_id)
 
                 ######## Exon_gene_info :
                 if exon_id not in self.exon_gene_info:
                     self.exon_gene_info[exon_id] = {}
 
-                self.exon_gene_info[exon_id]["gene_id"] = gene_id
+                start, stop = exon_location[exon_location.index(':') + 1:].split('-')
+                self.exon_gene_info[exon_id]["start"] = int(start)
+                self.exon_gene_info[exon_id]["stop"] = int(stop)
                 self.exon_gene_info[exon_id]["gene_strand"] = gene_strand
                 self.exon_gene_info[exon_id]["total_transcript_per_gene"] = total_transcript
 

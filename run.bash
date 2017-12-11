@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source activate ga-scores
-export PYTHONPATH=.
+export PYTHONPATH=.:src
 
 # Step 1. download
 ## Download the raw files from ENSEMBL ....
