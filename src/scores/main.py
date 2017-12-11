@@ -184,12 +184,7 @@ if __name__ == "__main__":
         snv_dict = score_utils.make_var_dict(variation_filepath)
 
     shared_objects['snv_dict'] = snv_dict
-    stop = timeit.default_timer()
-    logging.info('time to prepare for computation %dsec' % (stop - start))
 
-    # make the Pool of workers
-    workers_pool = Pool()  # defaults to number of cores
-    num_processed = 0
     guides_info_dir = os.path.join(base_path, 'Guide_files_with_information/')
     shared_objects['guides_info_dir'] = guides_info_dir
     logging.info('guide info directory: %s', guides_info_dir)
@@ -198,11 +193,15 @@ if __name__ == "__main__":
     # for input_file in ['ENSDARG00000000189_guides_info.txt']:
     inputs = sorted(os.listdir(guides_info_dir))
 
-    start = timeit.default_timer()
+    stop = timeit.default_timer()
+    logging.info('time to prepare for computation %dsec' % (stop - start))
 
+    workers_pool = Pool()  # defaults to number of cores
+
+    start = timeit.default_timer()
     workers_pool.map(score, inputs)
     workers_pool.close()
     workers_pool.join()
-
     stop = timeit.default_timer()
+
     logging.info('time to compute scores %dsec', stop - start)
