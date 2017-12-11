@@ -57,6 +57,7 @@ def _download(params):
 
     if not os.path.exists(os.path.splitext(destination)[0]):
         # TODO we should be more careful here, and force an unzip if the gz is newer..
+        logging.info('unzipping %s', destination)
         call(["gunzip", destination])
 
     if 'GVF_file' not in params:
@@ -65,6 +66,7 @@ def _download(params):
 
     destination = _download_from_url(params['GVF_file'], dst_dir)
     if not os.path.exists(os.path.splitext(destination)[0]):
+        logging.info('unzipping %s', destination)
         call(["gunzip", destination])
 
 
