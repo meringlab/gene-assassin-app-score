@@ -156,8 +156,7 @@ def making_guide_file_with_info(guide_file, output_file_path, sequence_dict, exo
 
                 output = "\t".join(
                     [gene_name, (g.seq_with_pam(sequence_dict)), g.seq, g.chromosome, str(g.start), str(g.end),
-                     g.strand,
-                     g.uniqueness, str(guide_exons), str(exon_biotype_list), str(g.cutsite),
+                     g.strand, g.uniqueness, str(guide_exons), str(exon_biotype_list), str(g.cutsite),
                      "\t".join(cds_start_stop_cut_site), "\t".join(exon_genomic_features), microhomology_sequence])
                 buffer.append(output)
 
