@@ -108,6 +108,28 @@ class Guide(object):
         return self._reverse_complement(chr_seq[sequence_start - 1:sequence_end])
 
 
+def find_target_exons(guide, gene, exon_dict):
+    '''
+      Searching for exons that this guide cuts.
+
+      It's possible to have overlapping genes, and also overlapping transcripts where the same exon is
+      coding in one but non-coding in the other one!
+    :param guide:
+    :param gene:
+    :param exon_dict:
+    :return:
+    '''
+    guide_exons = []
+    if gene in exon_dict.gene_exons:
+        for exon in exon_dict.gene_exons[gene]:  # a linear search is ok, only a handful of exons
+            exon_start = exon_dict.exon_gene_info[exon]['start']
+            exon_stop = exon_dict.exon_gene_info[exon]['stop']
+            # if exon_start <= exon_stop:
+            if g.is_cutsite_within(exon_start, exon_stop):
+                guide_exons.append(exon)
+
+    return sorted(guide_exons)
+
 def make_guide_file_with_info(guide_file, output_file_path, sequence_dict, exon_dict):
     logging.debug('processing %s', guide_file)
 
@@ -123,38 +145,22 @@ def make_guide_file_with_info(guide_file, output_file_path, sequence_dict, exon_
             g = Guide(line)
 
             if g.chromosome not in exon_dict.chromosomes:
-                # this happened for human, chromosome CHR_HSCHR6_MHC_QBL_CTG1 (in fasta but not in gtf)
+                # this happened for human (and mouse), chromosome CHR_HSCHR6_MHC_QBL_CTG1 (in fasta but not in gtf)
                 logging.warning("unknown chromosome %s, for %s", g.chromosome, line)
                 continue
 
-            # Searching for exons that this guide cuts
-            # it's possible to have overlapping genes, and also overlapping transcripts where the same exon is
-            # coding in one but non-coding in the other one!
-            guide_exons = []
-            if gene_name in exon_dict.gene_exons:
-                for exon in exon_dict.gene_exons[gene_name]:  # a linear search is ok, only a handful of exons
-                    exon_start = exon_dict.exon_gene_info[exon]['start']
-                    exon_stop = exon_dict.exon_gene_info[exon]['stop']
-                    # if exon_start <= exon_stop:
-                    if g.is_cutsite_within(exon_start, exon_stop):
-                        guide_exons.append(exon)
-
-            guide_exons = sorted(guide_exons)
-            logging.debug('gene %s, guide %s, guide_exon_list %s', gene_name, g.seq, guide_exons)
-
             try:
-                # Extracting feature
-                cds_start_stop_cut_site = guide_utils.calculate_cutsite18_dist_fom_exon_cds_start_stop_for_exon_list_modified(
-                    guide_exons, str(g.cutsite), exon_dict)
-                exon_genomic_features = guide_utils.extract_exon_features_from_gtf_for_exonlist_modified(
-                    guide_exons, exon_dict)
+                guide_exons = find_target_exons(g, gene_name, exon_dict)
+                logging.debug('gene %s, guide %s, guide_exon_list %s', gene_name, g.seq, guide_exons)
+
+                cds_start_stop_cut_site = guide_utils.cutsite_distance_fom_exon_cds(guide_exons, g.cutsite, exon_dict)
+                exon_genomic_features = guide_utils.exon_features_from_gtf(guide_exons, exon_dict)
+                microhomology_sequence = "nan"
+                exon_biotype_list = "nan"
 
                 if guide_exons:
                     microhomology_sequence = g.seq_for_microhomology_scoring(sequence_dict)
                     exon_biotype_list = [exon_dict.exon_id_biotype[x]["biotype"] for x in guide_exons]
-                else:
-                    microhomology_sequence = "nan"
-                    exon_biotype_list = "nan"
 
                 output = "\t".join(
                     [gene_name, (g.seq_with_pam(sequence_dict)), g.seq, g.chromosome, str(g.start), str(g.end),
@@ -190,13 +196,9 @@ def prepareOutputDirectory(params):
     base_path = os.path.join('output', ensembl_relase, species)
     dir_to_be_created = "Guide_files_with_information"
     guide_file_info_directory = os.path.join(base_path, dir_to_be_created)
-    try:
-        if not os.path.exists(guide_file_info_directory):
-            logging.info('creating output directory %s', guide_file_info_directory)
-            os.makedirs(guide_file_info_directory)
-    except Exception as e:
-        logging.exception('Cannot create output directories %s', e)
-        exit("\t ... Cannot create output directories %s" % guide_file_info_directory)
+    if not os.path.exists(guide_file_info_directory):
+        logging.info('creating output directory %s', guide_file_info_directory)
+        os.makedirs(guide_file_info_directory)
 
     return guide_file_info_directory
 
