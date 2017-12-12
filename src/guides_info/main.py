@@ -5,6 +5,7 @@ import sys
 import json
 import logging
 import timeit
+from Bio.Seq import Seq
 
 from guides_info.exon_dict import ExonsInfo
 import guides_info.chromosome_sequence_dict as chromosome_sequence_dict
@@ -12,81 +13,153 @@ import guides_info.guide_utils as guide_utils
 import download.main as downloads
 
 
+class Region(object):
+    def __init__(self, chromosome, start, end):
+        start = int(start)
+        end = int(end)
+        if start > end:
+            raise Exception('invalid location: %d-%d' % (start, end))
+        self.start = start
+        self.end = end
+        self.chromosome = chromosome
+
+    @classmethod
+    def parse(cls, str):
+        chr = str[:str.index(':')]
+        # start, stop = list(map(int, str[str.index(':') + 1:].split('-')))
+        start, end = str[str.index(':') + 1:].split('-')
+        return cls(chr, start, end)
+
+    def __str__(self):
+        return '%s:%d-%d' % (self.chromosome, self.start, self.end)
+
+    def __repr__(self):
+        return str(self)
+
+
+class Guide(object):
+    _seq_dict = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G', 'N': 'N'}
+
+    def __init__(self, tsv):
+        self._load_from_tsv(tsv)
+
+    def _load_from_tsv(self, line):
+        l = line.strip().split('\t')
+        self.chromosome = l[0]
+        self.start = int(l[1])
+        self.end = int(l[2])
+        self.strand = l[3]
+        self.seq = l[4]
+        self.offtarget_profile = l[10]
+        self.uniqueness = self.offtarget_profile.split(",")[1]
+        self.cutsite = self._compute_cutsite()
+
+    def __str__(self):
+        return '%s %s:%d-$d' % (self.strand, self.seq, self.start, self.end)
+
+    def is_on_forward_strand(self):
+        return self.strand == "+" or self.strand == "1"
+
+    def _compute_cutsite(self):
+        if self.is_on_forward_strand():
+            return self.end - 2
+        return self.start + 2
+
+    # def set_pam(self, sequence):
+    #     self.ngg = sequence
+    #
+    # def get_pam(self):
+    #     return self.ngg
+    #
+    # pam = property(get_pam, set_pam)
+
+    def is_cutsite_within(self, start, stop):
+        return start <= self.cutsite <= stop
+
+    def _reverse_complement(self, seq):
+        # return "".join([Guide._seq_dict[base] for base in reversed(seq)])
+        return str(Seq(seq).reverse_complement())
+
+    def seq_with_pam(self, chromosome_sequence_dict):
+        chr_seq = chromosome_sequence_dict[self.chromosome]
+
+        if self.is_on_forward_strand():
+            return chr_seq[self.start - 1: self.end + 3]
+        seq = chr_seq[self.start - 3 - 1:self.end]
+        seq = self._reverse_complement(seq)
+
+        ##### test
+        # seq_ngg_regex = "[ATGC]{20}[ATGC]{1}GG"
+        # search_object_ngg = re.search(seq_ngg_regex, seq)
+        # if search_object_ngg:
+        #     ngg_outcome = seq
+        # else:
+        #     ngg_outcome = "nan"
+
+        return seq
+
+    def seq_for_microhomology_scoring(self, chromosome_sequence_dict):
+        sequence_start = self.start - 13
+        sequence_end = self.end + 27
+
+        chr_seq = chromosome_sequence_dict[self.chromosome]
+        if self.is_on_forward_strand():
+            return chr_seq[sequence_start - 1:sequence_end]
+        return self._reverse_complement(chr_seq[sequence_start - 1:sequence_end])
+
+
 def making_guide_file_with_info(guide_file, output_file_path, sequence_dict, exon_dict):
     gene_name = os.path.basename(guide_file).split(".")[0]
     logging.debug('gene: %s', gene_name)
 
+    if gene_name not in exon_dict.gene_exons:  # NMD genes for example
+        logging.warning('not present in the parsed gtf %s', gene_name)
+
     buffer = []
     with open(guide_file) as guide_input_file:
         for line in guide_input_file:
+            g = Guide(line)
 
-            l = line.strip().split('\t')
-            guide_chr = l[0]
-            guide_start = l[1]
-            guide_stop = l[2]
-            guide_strand = l[3]
-            guide_seq = l[4]
-            guide_offtarget_profile = l[10]
-
-            if guide_chr not in exon_dict.chromosomes:
+            if g.chromosome not in exon_dict.chromosomes:
                 # this happened for human, chromosome CHR_HSCHR6_MHC_QBL_CTG1 (in fasta but not in gtf)
-                logging.warning("unknown chromosome %s, for %s", guide_chr, line)
+                logging.warning("unknown chromosome %s, for %s", g.chromosome, line)
                 continue
-
-            guide_cutsite18 = guide_utils.calculate_cutsite18_guide(guide_strand, guide_start, guide_stop)
-            cutsite = int(guide_cutsite18)
 
             # Searching for exons that this guide cuts
             # it's possible to have overlapping genes, and also overlapping transcripts where the same exon is
             # coding in one but non-coding in the other one!
-
             guide_exons = []
-            if gene_name not in exon_dict.gene_exons:  # NMD genes for example
-                logging.warning('not present in the parsed gtf %s', gene_name)
-            else:
+            if gene_name in exon_dict.gene_exons:
                 for exon in exon_dict.gene_exons[gene_name]:  # a linear search is ok, only a handful of exons
                     exon_start = exon_dict.exon_gene_info[exon]['start']
                     exon_stop = exon_dict.exon_gene_info[exon]['stop']
                     # if exon_start <= exon_stop:
-                    if exon_start <= cutsite <= exon_stop:
+                    if g.is_cutsite_within(exon_start, exon_stop):
                         guide_exons.append(exon)
 
             guide_exons = sorted(guide_exons)
-            logging.debug('gene %s, guide %s, guide_exon_list %s', gene_name, guide_seq, guide_exons)
+            logging.debug('gene %s, guide %s, guide_exon_list %s', gene_name, g.seq, guide_exons)
 
             try:
-                # Guide_uniqueness
-                offtarget_profile_list = guide_offtarget_profile.split(",")
-                guide_uniq = offtarget_profile_list[1]
-
-                guide_seq_with_ngg = guide_utils.get_guide_seq_with_ngg(guide_start, guide_stop, guide_strand,
-                                                                         guide_chr,
-                                                                         sequence_dict)
-
                 # Extracting feature
                 cds_start_stop_cut_site = guide_utils.calculate_cutsite18_dist_fom_exon_cds_start_stop_for_exon_list_modified(
-                    guide_exons, guide_cutsite18, exon_dict)
+                    guide_exons, str(g.cutsite), exon_dict)
                 exon_genomic_features = guide_utils.extract_exon_features_from_gtf_for_exonlist_modified(
                     guide_exons, exon_dict)
 
-                if len(guide_exons) != 0:
-                    microhomology_sequence = guide_utils.generate_seq_for_microhomology_scoring(guide_start,
-                                                                                                guide_stop,
-                                                                                                guide_strand,
-                                                                                                guide_chr,
-                                                                                                sequence_dict)
-                    exon_biotype_list = [exon_dict.exon_id_biotype[x]["biotype"] for x in
-                                         (guide_exons)]
+                if guide_exons:
+                    microhomology_sequence = g.seq_for_microhomology_scoring(sequence_dict)
+                    exon_biotype_list = [exon_dict.exon_id_biotype[x]["biotype"] for x in guide_exons]
                 else:
                     microhomology_sequence = "nan"
                     exon_biotype_list = "nan"
 
                 output = "\t".join(
-                    [gene_name, guide_seq_with_ngg, guide_seq, guide_chr, guide_start, guide_stop, guide_strand,
-                     guide_uniq, str(guide_exons), str(exon_biotype_list), str(guide_cutsite18),
+                    [gene_name, (g.seq_with_pam(sequence_dict)), g.seq, g.chromosome, str(g.start), str(g.end),
+                     g.strand,
+                     g.uniqueness, str(guide_exons), str(exon_biotype_list), str(g.cutsite),
                      "\t".join(cds_start_stop_cut_site), "\t".join(exon_genomic_features), microhomology_sequence])
                 buffer.append(output)
-                # gene_output_file_handle.write("\n")
 
             except Exception as e:
                 logging.exception('failed to collect info on %s - %s, error: %s', gene_name, line, e)
@@ -108,6 +181,7 @@ def making_guide_file_with_info(guide_file, output_file_path, sequence_dict, exo
             gene_output_file_handle.write('\n'.join(buffer))
     else:
         logging.info('no guides for this gene %s', gene_name)
+
 
 def prepareOutputDirectory(params):
     ensembl_relase = params['ensembl_release']
