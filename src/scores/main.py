@@ -180,7 +180,7 @@ if __name__ == "__main__":
         compressed_variation_filepath = os.path.join('output', ensembl_relase, species, 'Raw_data_files',
                                                      os.path.basename(params['GVF_file']))
         variation_filepath = os.path.splitext(compressed_variation_filepath)[0]
-        logging.info('loading variation from %s', compressed_variation_filepath)
+        logging.info('loading variation from %s', variation_filepath)
         snv_dict = score_utils.make_var_dict(variation_filepath)
 
     shared_objects['snv_dict'] = snv_dict

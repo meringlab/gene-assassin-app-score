@@ -48,7 +48,7 @@ def make_var_dict (variation_file_path):
         raise Exception("Error: Variation file not found %s" % variation_file_path)
 
     snv_dict = {}
-    with open(variation_file_path,"rb") as variation_input_file_handle:
+    with open(variation_file_path, "rt") as variation_input_file_handle:
         for line in variation_input_file_handle:
             if line[0] == "#":
                 continue
