@@ -6,7 +6,17 @@ import logging
 from scores import score_utils
 import download.main as downloads
 
+from multiprocessing import Pool, Manager
+
+# turns out when variation dict is big (+1GB gzipped), then multiprocessing gets super slow :/
+
+# i want to share massbigive dictionaries between processes so:
+# https://docs.python.org/3/library/multiprocessing.html#managers
+manager = Manager()
+shared_objects = manager.dict()
+
 output_file_descript = "_scores.txt"
+
 
 def get_output_filepath(guide_file, output_file_path, output_file_descript):
     gene_name = os.path.basename(guide_file).split("_")[0]
@@ -30,7 +40,7 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
     logging.debug('gene %s', gene_name)
     input_file_handle = open(input_file_path)
 
-    line = input_file_handle.readline() # throw away the header
+    line = input_file_handle.readline()  # throw away the header
     if not line.startswith('Gene_id'):
         logging.warning('seems like header is missing %s', line)
 
@@ -59,8 +69,8 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
         microhomogy_guide = l[-1]
 
         ######### Making the string as lisT
-        exon_list_unstring = score_utils.parse_as_list(exon_list) # ast.literal_eval(exon_list)
-        transcript_list_unstring = score_utils.parse_as_list(transcript_id_list) # ast.literal_eval(transcript_id_list)
+        exon_list_unstring = score_utils.parse_as_list(exon_list)  # ast.literal_eval(exon_list)
+        transcript_list_unstring = score_utils.parse_as_list(transcript_id_list)  # ast.literal_eval(transcript_id_list)
 
         ###### in case of there is no proten-coding transcript or single non-coding exons
         if len(exon_list_unstring) == 0 or len(transcript_list_unstring) == 0:
@@ -76,13 +86,18 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
             try:
                 #########  Genomic Context Score
 
-                guide_transcripts_prox_CDS_penalty = score_utils.calculate_proximity_to_CDS_for_transcript_list_modified(transcript_id_list, cutsite18, transcript_cds_info_dict)
+                guide_transcripts_prox_CDS_penalty = score_utils.calculate_proximity_to_CDS_for_transcript_list_modified(
+                    transcript_id_list, cutsite18, transcript_cds_info_dict)
 
-                guide_exons_prox_splicesite_penalty = score_utils.calculate_proximity_splice_site_for_exon_rank_list_modified(exon_rank_list, dist_cutsite_exon_cds_start_list_input=dist_cutsite_cds_start,                    dist_cutsite_exon_cds_stop_list_input=dist_cutsite_cds_stop,                    transcript_list_input=transcript_id_list, transcript_cds_info_dict=transcript_cds_info_dict)
+                guide_exons_prox_splicesite_penalty = score_utils.calculate_proximity_splice_site_for_exon_rank_list_modified(
+                    exon_rank_list, dist_cutsite_exon_cds_start_list_input=dist_cutsite_cds_start,
+                    dist_cutsite_exon_cds_stop_list_input=dist_cutsite_cds_stop,
+                    transcript_list_input=transcript_id_list, transcript_cds_info_dict=transcript_cds_info_dict)
 
                 guide_exon_ranking_score = score_utils.calculate_exon_ranking_score_modified(exon_ranks=exon_rank_list)
 
-                guide_transcript_covered_score = score_utils.calculate_transcript_coverage_score_modified(transcript_id_list, transcript_count)
+                guide_transcript_covered_score = score_utils.calculate_transcript_coverage_score_modified(
+                    transcript_id_list, transcript_count)
 
                 domain_score = score_utils.calculate_score_protein_domains(cutsite18, gene_id, protein_domain_info_dict)
 
@@ -110,7 +125,6 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
             except Exception as e:
                 logging.exception('failed to score %s %s, %s', gene_name, guide_seq, e)
 
-
     if output_buffer:
         header = ["Gene_id", "Exon_list", "Guide_with_ngg", "Guide_chr", "Guide_start", "Guide_stop", "Guide_strand", \
                   "SNP_score", "Domain_score", "Microhomology_score", "CDS_penalty_score", "Splicesite_penalty_score",
@@ -125,11 +139,19 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
 
     input_file_handle.close()
 
+
+def score(input_file):
+    input_file_path = os.path.join(shared_objects['guides_info_dir'], input_file)
+    calculate_score_guide_main(input_file_path, shared_objects['output_file_path'], output_file_descript,
+                               shared_objects['transcript_cds_info_dict'],
+                               shared_objects['protein_domain_info_dict'], shared_objects['snv_dict'])
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]):
         exit('missing config file!')
     logging.basicConfig(filename=None, level=getattr(logging, 'INFO', None),
-                        format='%(asctime)s %(levelname)s %(funcName)s %(message)s')
+                        format='%(asctime)s %(levelname)s %(funcName)s %(threadName)s %(message)s')
 
     params = json.load(open(sys.argv[1]))
     logging.info("computing scores, parameters: %s", params)
@@ -147,15 +169,17 @@ if __name__ == "__main__":
     except Exception as e:
         exit("\t ... Cannot create output directories %s" % output_file_path)
 
+    shared_objects['output_file_path'] = output_file_path
     start = timeit.default_timer()
 
     transcript_cds_filepath = downloads.get_transcript_cds_filepath(params)
     logging.info('loading transcripts from %s', transcript_cds_filepath)
     transcript_cds_info_dict = score_utils.make_transcript_cds_info_dict(transcript_cds_filepath)
-
+    shared_objects['transcript_cds_info_dict'] = transcript_cds_info_dict
     protein_dir_path = os.path.join('input', ensembl_relase, species, "proteins")
     logging.info('loading proteins from %s', protein_dir_path)
     protein_domain_info_dict = score_utils.make_protein_dict(protein_dir_path)
+    shared_objects['protein_domain_info_dict'] = protein_domain_info_dict
 
     snv_dict = {}
     if 'GVF_file' in params:
@@ -165,7 +189,10 @@ if __name__ == "__main__":
         logging.info('loading variation from %s', variation_filepath)
         snv_dict = score_utils.make_var_dict(variation_filepath)
 
+    shared_objects['snv_dict'] = snv_dict
+
     guides_info_dir = os.path.join(base_path, 'Guide_files_with_information/')
+    shared_objects['guides_info_dir'] = guides_info_dir
     logging.info('guide info directory: %s', guides_info_dir)
     # for input_file in ['ENSG00000005001_guides_info.txt']:
     # for input_file in ['ENSDARG00000000966_guides_info.txt']:
@@ -175,18 +202,12 @@ if __name__ == "__main__":
     stop = timeit.default_timer()
     logging.info('time to prepare for computation %dsec' % (stop - start))
 
+    workers_pool = Pool(2)  # defaults to number of cores
+
     start = timeit.default_timer()
-    num_processed = 0
-    for input_file in inputs:
-        input_file_path = os.path.join(guides_info_dir, input_file)
-        logging.debug('scoring %s', input_file_path)
-
-        calculate_score_guide_main(input_file_path, output_file_path, output_file_descript, transcript_cds_info_dict,
-                                   protein_domain_info_dict, snv_dict)
-        num_processed += 1
-        if num_processed % 100 == 0:
-            stop = timeit.default_timer()
-            logging.info('%d processed in %dsec', num_processed, stop - start)
-
+    workers_pool.map(score, inputs)
+    workers_pool.close()
+    workers_pool.join()
     stop = timeit.default_timer()
+
     logging.info('time to compute scores %dsec', stop - start)
