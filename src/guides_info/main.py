@@ -108,7 +108,9 @@ class Guide(object):
         return self._reverse_complement(chr_seq[sequence_start - 1:sequence_end])
 
 
-def making_guide_file_with_info(guide_file, output_file_path, sequence_dict, exon_dict):
+def make_guide_file_with_info(guide_file, output_file_path, sequence_dict, exon_dict):
+    logging.debug('processing %s', guide_file)
+
     gene_name = os.path.basename(guide_file).split(".")[0]
     logging.debug('gene: %s', gene_name)
 
@@ -200,24 +202,54 @@ def prepareOutputDirectory(params):
 
 
 def generate_guides(params, sequence_dict, output_directory, exon_dict):
-    start = timeit.default_timer()
-    num_processed = 0
+    logging.info('generating guides info')
     guides_directory = os.path.join('input', params['ensembl_release'], params['species_name'], 'guides')
     logging.info('reading guides from %s', guides_directory)
+
+    start = timeit.default_timer()
+    progress = ProgressLogger(1000)
     # weird cases for testing:
     # for guide_file_path in ['ENSDARG00000100456.guides.txt']: # has single nucleotide exon
     # for guide_file_path in ['ENSG00000026036.guides.txt']: # NMD gene
     for guide_file_path in os.listdir(guides_directory):
-        logging.debug('processing %s', guide_file_path)
-        making_guide_file_with_info(os.path.join(guides_directory, guide_file_path), output_directory, sequence_dict,
-                                    exon_dict)
-        num_processed += 1
-        if num_processed % 1000 == 0:
-            stop = timeit.default_timer()
-            logging.info('%d processed in %dsec', num_processed, stop - start)
+        make_guide_file_with_info(os.path.join(guides_directory, guide_file_path), output_directory, sequence_dict,
+                                  exon_dict)
+        progress.log()
     stop = timeit.default_timer()
     logging.info('time to generate guides %dsec', stop - start)
 
+
+def load_exons_info(params):
+    parsed_file_path = downloads.get_parsed_gtf_filepath(params)
+    logging.info('loading exons from %s', parsed_file_path)
+    return ExonsInfo(parsed_file_path)
+
+
+def load_sequence_dict(params):
+    # chromosome_data_path = "output/v85_2017/danio_rerio/v_85/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz"
+    compressed_fasta_file_name = os.path.basename(params['DNA_top_level_fa'])
+    fasta_file_name = os.path.splitext(compressed_fasta_file_name)[0]
+    fasta_file_path = os.path.join('output', params['ensembl_release'], params['species_name'], 'Raw_data_files',
+                                   fasta_file_name)
+    logging.info('loading fasta from %s', fasta_file_name)
+    sequence_dict = chromosome_sequence_dict.load_chromosome_sequence_dict_from_fasta(fasta_file_path)
+    # fasta_file_path = '../ga-pipeline/input/human/fasta/Homo_sapiens.GRCh38.dna.chromosome.20.fa.gz'
+    # logging.info('loading fasta from %s', fasta_file_name)
+    # sequence_dict = chromosome_sequence_dict.load_chromosome_sequence_dict_list(fasta_file_path)
+    return sequence_dict
+
+
+class ProgressLogger(object):
+    def __init__(self, report):
+        self.counter = 0
+        self.start = timeit.default_timer()
+        self.report = report
+
+    def log(self):
+        self.counter += 1
+        if self.counter % self.report == 0:
+            stop = timeit.default_timer()
+            logging.info('%d processed in %dsec', self.counter, stop - self.start)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]):
@@ -229,21 +261,7 @@ if __name__ == "__main__":
     logging.info("computing info files, parameters: %s", params)
 
     output_directory = prepareOutputDirectory(params)
+    exon_dict = load_exons_info(params)
+    sequence_dict = load_sequence_dict(params)
 
-    parsed_file_path = downloads.get_parsed_gtf_filepath(params)
-    logging.info('loading exons from %s', parsed_file_path)
-    exon_dict = ExonsInfo(parsed_file_path)
-
-    # chromosome_data_path = "output/v85_2017/danio_rerio/v_85/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz"
-    compressed_fasta_file_name = os.path.basename(params['DNA_top_level_fa'])
-    fasta_file_name = os.path.splitext(compressed_fasta_file_name)[0]
-    fasta_file_path = os.path.join('output', params['ensembl_release'], params['species_name'], 'Raw_data_files',
-                                   fasta_file_name)
-    logging.info('loading fasta from %s', fasta_file_name)
-    sequence_dict = chromosome_sequence_dict.load_chromosome_sequence_dict_from_fasta(fasta_file_path)
-    # fasta_file_path = '../ga-pipeline/input/human/fasta/Homo_sapiens.GRCh38.dna.chromosome.20.fa.gz'
-    # logging.info('loading fasta from %s', fasta_file_name)
-    # sequence_dict = chromosome_sequence_dict.load_chromosome_sequence_dict_list(fasta_file_path)
-
-    logging.info('generating guides info')
     generate_guides(params, sequence_dict, output_directory, exon_dict)
