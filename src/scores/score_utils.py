@@ -206,7 +206,10 @@ def calculate_proximity_splice_site (dist_cutsite_exon_cds_start, dist_cutsite_e
     return (proximity_penalty)
 
 
-def calculate_proximity_splice_site_for_exon_rank_list_modified (exon_rank_list_input, dist_cutsite_exon_cds_start_list_input, dist_cutsite_exon_cds_stop_list_input, transcript_list_input, transcript_cds_info_dict):
+def calculate_proximity_splice_site_for_exon_rank_list_modified(exon_rank_list_input,
+                                                                dist_cutsite_exon_cds_start_list_input,
+                                                                dist_cutsite_exon_cds_stop_list_input,
+                                                                transcript_list_input, transcript_cds_info_dict):
     exon_list = list(map(int, parse_as_list(exon_rank_list_input)))
     transcript_list = parse_as_list(transcript_list_input)
     dist_cutsite_exon_cds_start_list  = parse_as_list(dist_cutsite_exon_cds_start_list_input)
@@ -370,61 +373,64 @@ def get_microhomology_out_of_frame_score(seq):
 
                     output_list_before_duplication.append(sequence_list_before_duplication)
 
-    ## After searching out all microhomology patterns, duplication should be removed!!
-    if output_list_before_duplication:
+    if not output_list_before_duplication:
+        # ENSMUSG00000005506 TAAAGCTCACCTTTGCTCTG for example
+        return ('nan', 'nan')
 
-        sum_score_3 = 0
-        sum_score_not_3 = 0
+    # After searching out all microhomology patterns, duplication should be removed!!
 
-        for i in range(len(output_list_before_duplication)):
+    sum_score_3 = 0
+    sum_score_not_3 = 0
 
-            n = 0
-            score_3 = 0
-            score_not_3 = 0
+    for i in range(len(output_list_before_duplication)):
 
-            line = output_list_before_duplication[i]  ########### first line
+        n = 0
+        score_3 = 0
+        score_not_3 = 0
 
-            scrap = line[0]
-            left_start = line[1]
-            left_end = line[2]
-            right_start = line[3]
-            right_end = line[4]
-            length = line[5]
+        line = output_list_before_duplication[i]  ########### first line
 
-            for j in range(i):
-                line_ref = output_list_before_duplication[j]  ######### line to be comapred
+        scrap = line[0]
+        left_start = line[1]
+        left_end = line[2]
+        right_start = line[3]
+        right_end = line[4]
+        length = line[5]
 
-                left_start_ref = line_ref[1]
-                left_end_ref = line_ref[2]
-                right_start_ref = line_ref[3]
-                right_end_ref = line_ref[4]
+        for j in range(i):
+            line_ref = output_list_before_duplication[j]  ######### line to be comapred
 
-                if (left_start >= left_start_ref) and (left_end <= left_end_ref) and (
+            left_start_ref = line_ref[1]
+            left_end_ref = line_ref[2]
+            right_start_ref = line_ref[3]
+            right_end_ref = line_ref[4]
+
+            if (left_start >= left_start_ref) and (left_end <= left_end_ref) and (
                     right_start >= right_start_ref) and (right_end <= right_end_ref):
 
-                    if (left_start - left_start_ref) == (right_start - right_start_ref) and (
+                if (left_start - left_start_ref) == (right_start - right_start_ref) and (
                         left_end - left_end_ref) == (right_end - right_end_ref):
-                        n += 1
+                    n += 1
 
-            if n == 0:
-                length_factor = round(1 / exp((length) / (length_weight)), 3)
-                num_GC = len(findall('G', scrap)) + len(findall('C', scrap))
-                common_score = 100 * length_factor * ((len(scrap) - num_GC) + (num_GC * 2))
+        if n == 0:
+            length_factor = round(1 / exp((length) / (length_weight)), 3)
+            num_GC = len(findall('G', scrap)) + len(findall('C', scrap))
+            common_score = 100 * length_factor * ((len(scrap) - num_GC) + (num_GC * 2))
 
-                if (length % 3) == 0:
-                    score_3 = common_score
-                else: # elif (length % 3) != 0:
-                    score_not_3 = common_score
+            if (length % 3) == 0:
+                score_3 = common_score
+            else:  # elif (length % 3) != 0:
+                score_not_3 = common_score
 
-            sum_score_3 += score_3
-            sum_score_not_3 += score_not_3
+        sum_score_3 += score_3
+        sum_score_not_3 += score_not_3
 
-        microhomology_score = sum_score_3 + sum_score_not_3
+    microhomology_score = sum_score_3 + sum_score_not_3
 
-        if microhomology_score != 0:
-            out_of_frame_score = round(sum_score_not_3 * 100 / microhomology_score, 2)
-        else:
-            out_of_frame_score = "nan"
+    if microhomology_score != 0:
+        out_of_frame_score = round(sum_score_not_3 * 100 / microhomology_score, 2)
+    else:
+        out_of_frame_score = "nan"
 
     return (microhomology_score, out_of_frame_score)
 
