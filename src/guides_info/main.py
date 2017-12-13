@@ -125,7 +125,7 @@ def find_target_exons(guide, gene, exon_dict):
             exon_start = exon_dict.exon_gene_info[exon]['start']
             exon_stop = exon_dict.exon_gene_info[exon]['stop']
             # if exon_start <= exon_stop:
-            if g.is_cutsite_within(exon_start, exon_stop):
+            if guide.is_cutsite_within(exon_start, exon_stop):
                 guide_exons.append(exon)
 
     return sorted(guide_exons)
@@ -252,6 +252,7 @@ class ProgressLogger(object):
         if self.counter % self.report == 0:
             stop = timeit.default_timer()
             logging.info('%d processed in %dsec', self.counter, stop - self.start)
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]):
