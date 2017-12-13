@@ -5,6 +5,7 @@ import timeit
 import logging
 from scores import score_utils
 import download.main as downloads
+from domain.progress import ProgressLogger
 
 
 def prepare_output_directory(params):
@@ -23,6 +24,7 @@ class Runner(object):
     def __init__(self, params, output_file_descript="_scores.txt"):
         self.output_file_path = prepare_output_directory(params)
         self.output_file_descript = "_scores.txt"
+
         begin = timeit.default_timer()
         transcript_cds_filepath = downloads.get_transcript_cds_filepath(params)
         logging.info('loading transcripts from %s', transcript_cds_filepath)
@@ -44,6 +46,7 @@ class Runner(object):
         logging.info('time to load data %dsec' % (now - begin))
         self.start = timeit.default_timer()
         self.num_processed = 0
+        self.progress = ProgressLogger(100)
 
     def _extract_gene_name(self, guide_filepath):
         return os.path.basename(guide_filepath).split("_")[0]
@@ -64,10 +67,7 @@ class Runner(object):
         if scores:
             self._write(input_file_path, scores)
 
-        self.num_processed += 1
-        if self.num_processed % 100 == 0:
-            now = timeit.default_timer()
-            logging.info('%d processed in %dsec', self.num_processed, now - self.start)
+        self.progress.log()
 
     def _write(self, input_file_path, scores):
         output_file_name = self._get_output_filepath(input_file_path, self.output_file_path)

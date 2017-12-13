@@ -5,107 +5,13 @@ import sys
 import json
 import logging
 import timeit
-from Bio.Seq import Seq
 
+from domain.guide import Guide
+from domain.progress import ProgressLogger
 from guides_info.exon_dict import ExonsInfo
 import guides_info.chromosome_sequence_dict as chromosome_sequence_dict
 import guides_info.guide_utils as guide_utils
 import download.main as downloads
-
-
-class Region(object):
-    def __init__(self, chromosome, start, end):
-        start = int(start)
-        end = int(end)
-        if start > end:
-            raise Exception('invalid location: %d-%d' % (start, end))
-        self.start = start
-        self.end = end
-        self.chromosome = chromosome
-
-    @classmethod
-    def parse(cls, str):
-        chr = str[:str.index(':')]
-        # start, stop = list(map(int, str[str.index(':') + 1:].split('-')))
-        start, end = str[str.index(':') + 1:].split('-')
-        return cls(chr, start, end)
-
-    def __str__(self):
-        return '%s:%d-%d' % (self.chromosome, self.start, self.end)
-
-    def __repr__(self):
-        return str(self)
-
-
-class Guide(object):
-    _seq_dict = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G', 'N': 'N'}
-
-    def __init__(self, tsv):
-        self._load_from_tsv(tsv)
-
-    def _load_from_tsv(self, line):
-        l = line.strip().split('\t')
-        self.chromosome = l[0]
-        self.start = int(l[1])
-        self.end = int(l[2])
-        self.strand = l[3]
-        self.seq = l[4]
-        self.offtarget_profile = l[10]
-        self.uniqueness = self.offtarget_profile.split(",")[1]
-        self.cutsite = self._compute_cutsite()
-
-    def __str__(self):
-        return '%s %s:%d-$d' % (self.strand, self.seq, self.start, self.end)
-
-    def is_on_forward_strand(self):
-        return self.strand == "+" or self.strand == "1"
-
-    def _compute_cutsite(self):
-        if self.is_on_forward_strand():
-            return self.end - 2
-        return self.start + 2
-
-    # def set_pam(self, sequence):
-    #     self.ngg = sequence
-    #
-    # def get_pam(self):
-    #     return self.ngg
-    #
-    # pam = property(get_pam, set_pam)
-
-    def is_cutsite_within(self, start, stop):
-        return start <= self.cutsite <= stop
-
-    def _reverse_complement(self, seq):
-        # return "".join([Guide._seq_dict[base] for base in reversed(seq)])
-        return str(Seq(seq).reverse_complement())
-
-    def seq_with_pam(self, chromosome_sequence_dict):
-        chr_seq = chromosome_sequence_dict[self.chromosome]
-
-        if self.is_on_forward_strand():
-            return chr_seq[self.start - 1: self.end + 3]
-        seq = chr_seq[self.start - 3 - 1:self.end]
-        seq = self._reverse_complement(seq)
-
-        ##### test
-        # seq_ngg_regex = "[ATGC]{20}[ATGC]{1}GG"
-        # search_object_ngg = re.search(seq_ngg_regex, seq)
-        # if search_object_ngg:
-        #     ngg_outcome = seq
-        # else:
-        #     ngg_outcome = "nan"
-
-        return seq
-
-    def seq_for_microhomology_scoring(self, chromosome_sequence_dict):
-        sequence_start = self.start - 13
-        sequence_end = self.end + 27
-
-        chr_seq = chromosome_sequence_dict[self.chromosome]
-        if self.is_on_forward_strand():
-            return chr_seq[sequence_start - 1:sequence_end]
-        return self._reverse_complement(chr_seq[sequence_start - 1:sequence_end])
 
 
 def find_target_exons(guide, gene, exon_dict):
@@ -239,19 +145,6 @@ def load_sequence_dict(params):
     # logging.info('loading fasta from %s', fasta_file_name)
     # sequence_dict = chromosome_sequence_dict.load_chromosome_sequence_dict_list(fasta_file_path)
     return sequence_dict
-
-
-class ProgressLogger(object):
-    def __init__(self, report):
-        self.counter = 0
-        self.start = timeit.default_timer()
-        self.report = report
-
-    def log(self):
-        self.counter += 1
-        if self.counter % self.report == 0:
-            stop = timeit.default_timer()
-            logging.info('%d processed in %dsec', self.counter, stop - self.start)
 
 
 if __name__ == "__main__":
