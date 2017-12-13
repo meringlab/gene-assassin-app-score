@@ -8,9 +8,14 @@ import download.main as downloads
 
 output_file_descript = "_scores.txt"
 
-def get_output_filepath(guide_file, output_file_path, output_file_descript):
-    gene_name = os.path.basename(guide_file).split("_")[0]
-    gene_output_file_name = gene_name + output_file_descript  # like "_guide_info.txt"
+
+def _extract_gene_name(guide_filepath):
+    return os.path.basename(guide_filepath).split("_")[0]
+
+
+def get_output_filepath(guide_file, output_file_path):
+    gene_name = _extract_gene_name(guide_file)
+    gene_output_file_name = gene_name + output_file_descript
 
     if os.path.exists(output_file_path):
         gene_output_file_name_path = os.path.join(output_file_path, gene_output_file_name)
@@ -20,13 +25,13 @@ def get_output_filepath(guide_file, output_file_path, output_file_descript):
     return gene_output_file_name_path
 
 
-def calculate_score_guide_main(input_file_path, output_file_path, output_file_descript, transcript_cds_info_dict,
+def calculate_score_guide_main(input_file_path, output_file_path, transcript_cds_info_dict,
                                protein_domain_info_dict, snv_dict):
-    logging.info('scoring %s', input_file_path)
+    logging.debug('scoring %s', input_file_path)
 
-    output_file_name = get_output_filepath(input_file_path, output_file_path, output_file_descript)
+    output_file_name = get_output_filepath(input_file_path, output_file_path)
 
-    gene_name = os.path.basename(input_file_path).split("_")[0]
+    gene_name = _extract_gene_name(input_file_path)
     logging.debug('gene %s', gene_name)
     input_file_handle = open(input_file_path)
 
@@ -63,53 +68,40 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
         transcript_list_unstring = score_utils.parse_as_list(transcript_id_list) # ast.literal_eval(transcript_id_list)
 
         ###### in case of there is no proten-coding transcript or single non-coding exons
-        if len(exon_list_unstring) == 0 or len(transcript_list_unstring) == 0:
-            total_score = -20
-            snp_score = "nan";
-            domain_score = "nan";
-            calculated_micrhomology_score = "nan";
-            guide_transcripts_prox_CDS_penalty = "nan"
-            guide_exons_prox_splicesite_penalty = "nan";
-            guide_transcript_covered_score = "nan";
-            guide_exon_ranking_score = "nan"
-        else:
-            try:
-                #########  Genomic Context Score
+        if exon_list_unstring and transcript_list_unstring:
+            continue
 
-                guide_transcripts_prox_CDS_penalty = score_utils.calculate_proximity_to_CDS_for_transcript_list_modified(transcript_id_list, cutsite18, transcript_cds_info_dict)
+        try:
+            prox_CDS_penalty = score_utils.calculate_proximity_to_CDS_for_transcript_list_modified(transcript_id_list,
+                                                                                                   cutsite18,
+                                                                                                   transcript_cds_info_dict)
+            prox_splicesite_penalty = score_utils.calculate_proximity_splice_site_for_exon_rank_list_modified(
+                exon_rank_list, dist_cutsite_cds_start, dist_cutsite_cds_stop, transcript_id_list,
+                transcript_cds_info_dict)
+            exon_ranking_score = score_utils.calculate_exon_ranking_score_modified(exon_rank_list)
+            transcript_covered_score = score_utils.calculate_transcript_coverage_score_modified(transcript_id_list,
+                                                                                                transcript_count)
+            domain_score = score_utils.calculate_score_protein_domains(cutsite18, gene_id, protein_domain_info_dict)
+            micrhomology_score = score_utils.calculate_microhomology_score(seq=microhomogy_guide)
+            snp_score = score_utils.calculate_snp_score(guide_chr, cutsite18, snv_dict)
 
-                guide_exons_prox_splicesite_penalty = score_utils.calculate_proximity_splice_site_for_exon_rank_list_modified(exon_rank_list, dist_cutsite_exon_cds_start_list_input=dist_cutsite_cds_start,                    dist_cutsite_exon_cds_stop_list_input=dist_cutsite_cds_stop,                    transcript_list_input=transcript_id_list, transcript_cds_info_dict=transcript_cds_info_dict)
+            scoring_list = list((prox_CDS_penalty, prox_splicesite_penalty,
+                                 exon_ranking_score, transcript_covered_score, domain_score,
+                                 micrhomology_score, snp_score))
+            scoring_list_no_nan = [x for x in scoring_list if x != "nan"]
+            scoring_list_no_nan_float = [float(x) for x in scoring_list_no_nan]
+            total_score = sum(scoring_list_no_nan_float) / 10
 
-                guide_exon_ranking_score = score_utils.calculate_exon_ranking_score_modified(exon_ranks=exon_rank_list)
+            output = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\t{13}\t{14}\n".format(
+                gene_id, exon_list, guide_with_ngg, guide_chr, guide_start, guide_stop, guide_strand,
+                str(snp_score), str(domain_score), str(micrhomology_score), str(prox_CDS_penalty),
+                str(prox_splicesite_penalty), str(transcript_covered_score), str(exon_ranking_score),
+                str(total_score))
 
-                guide_transcript_covered_score = score_utils.calculate_transcript_coverage_score_modified(transcript_id_list, transcript_count)
+            output_buffer.append(output)
 
-                domain_score = score_utils.calculate_score_protein_domains(cutsite18, gene_id, protein_domain_info_dict)
-
-                calculated_micrhomology_score = score_utils.calculate_microhomology_score(seq=microhomogy_guide)
-
-                snp_score = score_utils.calculate_snp_score(guide_chr, cutsite18, snv_dict)
-
-                # Total scores
-                scoring_list = list((guide_transcripts_prox_CDS_penalty, guide_exons_prox_splicesite_penalty,
-                                     guide_exon_ranking_score, guide_transcript_covered_score, domain_score,
-                                     calculated_micrhomology_score, snp_score))
-                scoring_list_no_nan = [x for x in scoring_list if x != "nan"]
-                scoring_list_no_nan_float = [float(x) for x in scoring_list_no_nan]
-                total_score = sum(scoring_list_no_nan_float) / 10
-
-                output = gene_id + "\t" + exon_list + "\t" + guide_with_ngg + "\t" + guide_chr + "\t" + guide_start + "\t" + guide_stop + "\t" + guide_strand + "\t" + \
-                         str(snp_score) + "\t" + str(domain_score) + "\t" + str(calculated_micrhomology_score) + \
-                         "\t" + str(guide_transcripts_prox_CDS_penalty) + "\t" + str(
-                    guide_exons_prox_splicesite_penalty) + "\t" + str(guide_transcript_covered_score) + "\t" + str(
-                    guide_exon_ranking_score) + \
-                         "\t" + str(total_score) + "\n"
-
-                output_buffer.append(output)
-
-            except Exception as e:
-                logging.exception('failed to score %s %s, %s', gene_name, guide_seq, e)
-
+        except Exception as e:
+            logging.exception('failed to score %s %s, %s', gene_name, guide_seq, e)
 
     if output_buffer:
         header = ["Gene_id", "Exon_list", "Guide_with_ngg", "Guide_chr", "Guide_start", "Guide_stop", "Guide_strand", \
@@ -125,6 +117,61 @@ def calculate_score_guide_main(input_file_path, output_file_path, output_file_de
 
     input_file_handle.close()
 
+
+def prepare_output_directory(params):
+    base_path = os.path.join('output', params['ensembl_release'], params['species_name'])
+    dir_to_be_created = "Guide_files_with_scores"
+    output_file_path = os.path.join(base_path, dir_to_be_created)
+    try:
+        if not os.path.exists(output_file_path):
+            os.makedirs(output_file_path)
+        return output_file_path
+    except Exception as e:
+        exit("\t ... Cannot create output directories %s" % output_file_path)
+
+
+class Runner(object):
+    def __init__(self, params):
+        self.output_file_path = prepare_output_directory(params)
+
+        start = timeit.default_timer()
+        transcript_cds_filepath = downloads.get_transcript_cds_filepath(params)
+        logging.info('loading transcripts from %s', transcript_cds_filepath)
+        self.transcript_cds_info_dict = score_utils.make_transcript_cds_info_dict(transcript_cds_filepath)
+
+        protein_dir_path = os.path.join('input', params['ensembl_release'], params['species_name'], "proteins")
+        logging.info('loading proteins from %s', protein_dir_path)
+        self.protein_domain_info_dict = score_utils.make_protein_dict(protein_dir_path)
+
+        self.snv_dict = {}
+        if 'GVF_file' in params:
+            compressed_variation_filepath = os.path.join('output', params['ensembl_release'], params['species_name'],
+                                                         'Raw_data_files',
+                                                         os.path.basename(params['GVF_file']))
+            variation_filepath = os.path.splitext(compressed_variation_filepath)[0]
+            logging.info('loading variation from %s', variation_filepath)
+            self.snv_dict = score_utils.make_var_dict(variation_filepath)
+        logging.info('time to load data %dsec' % (stop - start))
+        self.start = timeit.default_timer()
+        self.num_processed = 0
+
+    def calculate_scores(self, input_file):
+        calculate_score_guide_main(input_file_path, self.output_file_path, self.transcript_cds_info_dict,
+                                   self.protein_domain_info_dict, self.snv_dict)
+        self.num_processed += 1
+        if self.num_processed % 100 == 0:
+            now = timeit.default_timer()
+            logging.info('%d processed in %dsec', self.num_processed, now - self.start)
+
+
+def find_guide_files(params):
+    base_path = os.path.join('output', params['ensembl_release'], params['species_name'])
+    guides_info_dir = os.path.join(base_path, 'Guide_files_with_information/')
+    logging.info('guide info directory: %s', guides_info_dir)
+    guides = [os.path.join(guides_info_dir, f) for f in sorted(os.listdir(guides_info_dir))]
+    return guides
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]):
         exit('missing config file!')
@@ -134,59 +181,16 @@ if __name__ == "__main__":
     params = json.load(open(sys.argv[1]))
     logging.info("computing scores, parameters: %s", params)
 
-    ensembl_relase = params['ensembl_release']
-    species = params['species_name']
+    guide_files = find_guide_files()
 
-    base_path = os.path.join('output', ensembl_relase, species)
-    dir_to_be_created = "Guide_files_with_scores"
+    if not guide_files:
+        logging.warning('no input files')
+        exit(0)
 
-    output_file_path = os.path.join(base_path, dir_to_be_created)
-    try:
-        if not os.path.exists(output_file_path):
-            os.makedirs(output_file_path)
-    except Exception as e:
-        exit("\t ... Cannot create output directories %s" % output_file_path)
-
+    runner = Runner(params)
     start = timeit.default_timer()
-
-    transcript_cds_filepath = downloads.get_transcript_cds_filepath(params)
-    logging.info('loading transcripts from %s', transcript_cds_filepath)
-    transcript_cds_info_dict = score_utils.make_transcript_cds_info_dict(transcript_cds_filepath)
-
-    protein_dir_path = os.path.join('input', ensembl_relase, species, "proteins")
-    logging.info('loading proteins from %s', protein_dir_path)
-    protein_domain_info_dict = score_utils.make_protein_dict(protein_dir_path)
-
-    snv_dict = {}
-    if 'GVF_file' in params:
-        compressed_variation_filepath = os.path.join('output', ensembl_relase, species, 'Raw_data_files',
-                                                     os.path.basename(params['GVF_file']))
-        variation_filepath = os.path.splitext(compressed_variation_filepath)[0]
-        logging.info('loading variation from %s', variation_filepath)
-        snv_dict = score_utils.make_var_dict(variation_filepath)
-
-    guides_info_dir = os.path.join(base_path, 'Guide_files_with_information/')
-    logging.info('guide info directory: %s', guides_info_dir)
-    # for input_file in ['ENSG00000005001_guides_info.txt']:
-    # for input_file in ['ENSDARG00000000966_guides_info.txt']:
-    # for input_file in ['ENSDARG00000000189_guides_info.txt']:
-    inputs = sorted(os.listdir(guides_info_dir))
-
-    stop = timeit.default_timer()
-    logging.info('time to prepare for computation %dsec' % (stop - start))
-
-    start = timeit.default_timer()
-    num_processed = 0
-    for input_file in inputs:
-        input_file_path = os.path.join(guides_info_dir, input_file)
-        logging.debug('scoring %s', input_file_path)
-
-        calculate_score_guide_main(input_file_path, output_file_path, output_file_descript, transcript_cds_info_dict,
-                                   protein_domain_info_dict, snv_dict)
-        num_processed += 1
-        if num_processed % 100 == 0:
-            stop = timeit.default_timer()
-            logging.info('%d processed in %dsec', num_processed, stop - start)
+    for input_file_path in guide_files:
+        runner.calculate_scores(input_file_path)
 
     stop = timeit.default_timer()
     logging.info('time to compute scores %dsec', stop - start)
