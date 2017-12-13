@@ -6,8 +6,8 @@ import json
 import logging
 import timeit
 
-from domain.guide import Guide
-from domain.progress import ProgressLogger
+from helper.guide import Guide
+from helper.progress import ProgressLogger
 from guides_info.exon_dict import ExonsInfo
 import guides_info.chromosome_sequence_dict as chromosome_sequence_dict
 import guides_info.guide_utils as guide_utils

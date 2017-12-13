@@ -5,7 +5,7 @@ import timeit
 import logging
 from scores import score_utils
 import download.main as downloads
-from domain.progress import ProgressLogger
+from helper.progress import ProgressLogger
 
 
 def prepare_output_directory(params):

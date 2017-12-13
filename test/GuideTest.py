@@ -1,6 +1,6 @@
 import unittest
 
-from domain.guide import Guide
+from helper.guide import Guide
 
 
 class GuideTest(unittest.TestCase):
