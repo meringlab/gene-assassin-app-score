@@ -5,6 +5,7 @@ import timeit
 import logging
 from scores import score_utils
 import download.main as downloads
+import guides_info.main as guides_info
 
 from multiprocessing import Pool, Manager
 
@@ -160,7 +161,7 @@ if __name__ == "__main__":
     species = params['species_name']
 
     base_path = os.path.join('output', ensembl_relase, species)
-    dir_to_be_created = "Guide_files_with_scores"
+    dir_to_be_created = "scores"
 
     output_file_path = os.path.join(base_path, dir_to_be_created)
     try:
@@ -191,7 +192,7 @@ if __name__ == "__main__":
 
     shared_objects['snv_dict'] = snv_dict
 
-    guides_info_dir = os.path.join(base_path, 'Guide_files_with_information/')
+    guides_info_dir = os.path.join(base_path, guides_info.OUTPUT_FOLDER)
     shared_objects['guides_info_dir'] = guides_info_dir
     logging.info('guide info directory: %s', guides_info_dir)
     # for input_file in ['ENSG00000005001_guides_info.txt']:

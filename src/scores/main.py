@@ -3,15 +3,18 @@ import sys
 import json
 import timeit
 import logging
+
+from helper.guide import Guide
 from scores import score_utils
 import download.main as downloads
+import guides_info.main as guides_info
 from helper.progress import ProgressLogger
 
+OUTPUT_FOLDER = "scores"
 
 def prepare_output_directory(params):
     base_path = os.path.join('output', params['ensembl_release'], params['species_name'])
-    dir_to_be_created = "Guide_files_with_scores"
-    output_file_path = os.path.join(base_path, dir_to_be_created)
+    output_file_path = os.path.join(base_path, OUTPUT_FOLDER)
     try:
         if not os.path.exists(output_file_path):
             os.makedirs(output_file_path)
@@ -23,7 +26,7 @@ def prepare_output_directory(params):
 class Runner(object):
     def __init__(self, params, output_file_descript="_scores.txt"):
         self.output_file_path = prepare_output_directory(params)
-        self.output_file_descript = "_scores.txt"
+        self.output_file_descript = output_file_descript
 
         begin = timeit.default_timer()
         transcript_cds_filepath = downloads.get_transcript_cds_filepath(params)
@@ -88,70 +91,47 @@ class Runner(object):
                 output_buffer.append(scores)
         return output_buffer
 
-    def _load_guides(self, input_file_path):
+    def _load_guides(self, guide_file):
         gene_name = self._extract_gene_name(input_file_path)
         logging.debug('gene %s', gene_name)
-        guides = []
-        with open(input_file_path) as input_file_handle:
-            line = input_file_handle.readline()  # throw away the header
+
+        with open(guide_file) as f:
+            line = f.readline()  # throw away the header
             if not line.startswith('Gene_id'):
                 logging.warning('seems like header is missing %s, %s', line, input_file_path)
+            records = f.readlines()
 
-            for line in input_file_handle:
-                logging.debug('line: %s', line)
-                r = line.strip().split('\t')
-                if len(r) < 2:
-                    continue
-                gene_id = r[0]
-                guide_with_ngg = r[1]
-                guide_seq = r[2]
-                guide_chr = r[3]
-                guide_start = r[4]
-                guide_stop = r[5]
-                guide_strand = r[6]
-                guide_uniqueness = r[7]
-                exon_list = r[8]
-                exon_biotype = r[9]
-                cutsite18 = r[10]
-                dist_cutsite_cds_start = r[11]
-                dist_cutsite_cds_stop = r[12]
-                transcript_count = r[13]
-                transcript_id_list = r[14]
-                exon_rank_list = r[-2]
-                microhomogy_guide = r[-1]
-                guides.append((
-                    gene_id, guide_with_ngg, guide_seq, guide_chr, guide_start, guide_stop, guide_strand,
-                    guide_uniqueness, exon_list, exon_biotype, cutsite18, dist_cutsite_cds_start, dist_cutsite_cds_stop,
-                    transcript_count, transcript_id_list, exon_rank_list, microhomogy_guide
-                ))
+        guides = [Guide.from_full_tsv(record) for record in records]
+        guides = list(filter(None, guides))
+
+        if len(records) != len(guides):
+            logging.warning('not all guides loaded from %s', guide_file)
+
+
         return guides
 
     def score_guide(self, guide):
-        (gene_id, guide_with_ngg, guide_seq, guide_chr, guide_start, guide_stop, guide_strand,
-         guide_uniqueness, exon_list, exon_biotype, cutsite18, dist_cutsite_cds_start, dist_cutsite_cds_stop,
-         transcript_count, transcript_id_list, exon_rank_list, microhomogy_guide) = guide
-
-        exon_list_unstring = score_utils.parse_as_list(exon_list)  # ast.literal_eval(exon_list)
-        transcript_list_unstring = score_utils.parse_as_list(transcript_id_list)  # ast.literal_eval(transcript_id_list)
+        exon_list_unstring = score_utils.parse_as_list(guide.guide_exons)  # ast.literal_eval(exon_list)
+        transcript_list_unstring = score_utils.parse_as_list(guide.transcripts)  # ast.literal_eval(transcript_id_list)
 
         # in case of there is no proten-coding transcript or single non-coding exons
         if not exon_list_unstring or not transcript_list_unstring:
             return None
 
         try:
-            prox_CDS_penalty = score_utils.calculate_proximity_to_CDS_for_transcript_list_modified(transcript_id_list,
-                                                                                                   cutsite18,
+            prox_CDS_penalty = score_utils.calculate_proximity_to_CDS_for_transcript_list_modified(guide.transcripts,
+                                                                                                   guide._compute_cutsite(),
                                                                                                    self.transcript_cds_info_dict)
             prox_splicesite_penalty = score_utils.calculate_proximity_splice_site_for_exon_rank_list_modified(
-                exon_rank_list, dist_cutsite_cds_start, dist_cutsite_cds_stop, transcript_id_list,
+                guide.exon_rank_list, guide.cds_start_cutsite, guide.cds_stop_cutsite, guide.transcripts,
                 self.transcript_cds_info_dict)
-            exon_ranking_score = score_utils.calculate_exon_ranking_score_modified(exon_rank_list)
-            transcript_covered_score = score_utils.calculate_transcript_coverage_score_modified(transcript_id_list,
-                                                                                                transcript_count)
-            domain_score = score_utils.calculate_score_protein_domains(cutsite18, gene_id,
+            exon_ranking_score = score_utils.calculate_exon_ranking_score_modified(guide.exon_rank_list)
+            transcript_covered_score = score_utils.calculate_transcript_coverage_score_modified(guide.transcripts,
+                                                                                                guide.transcript_count)
+            domain_score = score_utils.calculate_score_protein_domains(guide._compute_cutsite(), guide.gene_id,
                                                                        self.protein_domain_info_dict)
-            micrhomology_score = score_utils.calculate_microhomology_score(seq=microhomogy_guide)
-            snp_score = score_utils.calculate_snp_score(guide_chr, cutsite18, self.snv_dict)
+            micrhomology_score = score_utils.calculate_microhomology_score(guide.microhomology_sequence)
+            snp_score = score_utils.calculate_snp_score(guide.chromosome, guide._compute_cutsite(), self.snv_dict)
 
             scoring_list = list((prox_CDS_penalty, prox_splicesite_penalty,
                                  exon_ranking_score, transcript_covered_score, domain_score,
@@ -161,7 +141,7 @@ class Runner(object):
             total_score = sum(scoring_list_no_nan_float) / 10
 
             output = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\t{13}\t{14}\n".format(
-                gene_id, exon_list, guide_with_ngg, guide_chr, guide_start, guide_stop, guide_strand,
+                guide.gene_id, guide.guide_exons, guide.pamseq, guide.chromosome, guide.start, guide.end, guide.strand,
                 str(snp_score), str(domain_score), str(micrhomology_score), str(prox_CDS_penalty),
                 str(prox_splicesite_penalty), str(transcript_covered_score), str(exon_ranking_score),
                 str(total_score))
@@ -169,13 +149,13 @@ class Runner(object):
             return output
 
         except Exception as e:
-            logging.exception('failed to score %s %s, %s', gene_id, guide_seq, e)
+            logging.exception('failed to score %s %s, %s', guide.gene_id, guide, e)
             return None
 
 
 def find_guide_files(params):
     base_path = os.path.join('output', params['ensembl_release'], params['species_name'])
-    guides_info_dir = os.path.join(base_path, 'Guide_files_with_information/')
+    guides_info_dir = os.path.join(base_path, guides_info.OUTPUT_FOLDER)
     logging.info('guide info directory: %s', guides_info_dir)
     guides = [os.path.join(guides_info_dir, f) for f in sorted(os.listdir(guides_info_dir))]
     return guides
