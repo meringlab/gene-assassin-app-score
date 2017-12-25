@@ -357,6 +357,11 @@ def calculate_score_protein_domains (cutsite_18, gene_id,protein_domain_info_dic
 
 
 def get_microhomology_out_of_frame_score(seq):
+    '''
+    possibly adapted from https://media.nature.com/original/nature-assets/nmeth/journal/v11/n7/extref/nmeth.3015-S1.pdf
+    :param seq:
+    :return:
+    '''
     length_weight = 20.0
     left = 30  # Insert the position expected to be broken.
     right = len(seq) - left
