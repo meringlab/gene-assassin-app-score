@@ -256,20 +256,13 @@ class Guide(object):
 
     def seq_with_pam(self, chromosome_sequence_dict):
         chr_seq = chromosome_sequence_dict[self.chromosome]
-
+        # python starts counting from 0, and ensembl from 1 so got to substract -1
         if self.is_on_forward_strand():
-            return chr_seq[self.start - 1: self.end + 3]
-        seq = chr_seq[self.start - 3 - 1:self.end]
-        seq = self._reverse_complement(seq)
-
-        ##### test
-        # seq_ngg_regex = "[ATGC]{20}[ATGC]{1}GG"
-        # search_object_ngg = re.search(seq_ngg_regex, seq)
-        # if search_object_ngg:
-        #     ngg_outcome = seq
-        # else:
-        #     ngg_outcome = "nan"
-
+            seq = chr_seq[self.start - 1: self.end + 3]
+        else:
+            seq = chr_seq[self.start - 3 - 1:self.end]
+            seq = self._reverse_complement(seq)
+        assert (len(seq) == 23)
         return seq
 
     def seq_for_microhomology_scoring(self, chromosome_sequence_dict):

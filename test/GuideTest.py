@@ -26,6 +26,39 @@ class GuideTest(unittest.TestCase):
         self.assertEquals(full_tsv, g.to_tsv())
         self.assertGuideEqualExtra(Guide.from_full_tsv(g.to_tsv()), expected)
 
+    def test_pam(self):
+        g = Guide()
+        g.chromosome, g.start, g.end, g.strand = ('1', 28, 47, '1')
+        chr = {'1': 'AACCAAGGCTAACACAGAGAGTGAATCAGAAGAAGAGTCTTTCTGAGTGGGATTTGAACTC'}
+        g.seq = 'AGAAGAAGAGTCTTTCTGAG'
+        self.assertEqual('AGAAGAAGAGTCTTTCTGAGTGG', g.seq_with_pam(chr))
+
+        g.chromosome, g.start, g.end, g.strand = ('1', 6, 25, '-1')
+        chr = {'1': 'AACCAAGGCTAACACAGAGAGTGAATCAGAAGAAGAGTCTTTCTGAGTGGGATTTGAACTC'}
+        g.seq = 'TTCACTCTCTGTGTTAGCCT'
+
+        self.assertEqual('TTCACTCTCTGTGTTAGCCTTGG', g.seq_with_pam(chr))
+
+        # if g.is_on_forward_strand():
+        #     kmer_start = exon_start + position - 37
+        #     kmer_end = kmer_start + kmer_length
+        #     kmer_d = str(dna_dict[chromosome].seq[kmer_start:kmer_end])
+        #     pam_d = str(dna_dict[chromosome].seq[kmer_end:kmer_end + pam_length])
+        # else:
+        #     kmer_start = exon_end - position + 16
+        #     kmer_end = kmer_start + kmer_length
+        #     kmer_d = str(dna_dict[chromosome].seq[kmer_start:kmer_end].reverse_complement())
+        #     pam_d = str(dna_dict[chromosome].seq[kmer_start - pam_length:kmer_start].reverse_complement())
+
+        ## test
+        # seq_ngg_regex = "[ATGC]{20}[ATGC]{1}GG"
+        # search_object_ngg = re.search(seq_ngg_regex, seq)
+        # if search_object_ngg:
+        #     ngg_outcome = seq
+        # else:
+        #     ngg_outcome = "nan"
+
+
     def assertGuideEqualExtra(self, guide, values):
         self.assertEqual(values[0], guide.gene_id)
         self.assertEqual(values[1], guide.pamseq)
