@@ -26,7 +26,11 @@ def make_guide_file_with_info(guide_file, output_file_path, sequence_dict, exon_
 
     with open(guide_file) as f:
         records = f.readlines()
+    if not records:
+        logging.warning('%s - empty guide file!?', guide_file)
+        return
 
+    logging.debug('%d guides for %s', len(records), guide_file)
     guides = [Guide.load_guide(gene_name, record, exon_dict, sequence_dict) for record in records]
     guides = list(filter(None, guides))
     if len(records) != len(guides):

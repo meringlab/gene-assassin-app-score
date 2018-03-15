@@ -25,7 +25,6 @@ def load_chromosome_sequence_dict(fasta_filepath):
     :param fasta_filepath: "output/v_85/danio_rerio/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa.gz"
     :return: dict { chromosome -> dna sequence }
     '''
-
     # if not os.path.exists(fasta_filepath):
     #     exit("\t ... fasta file does not exist %s." % fasta_filepath)
     start = timeit.default_timer()
@@ -39,21 +38,17 @@ def load_chromosome_sequence_dict(fasta_filepath):
                 #print l ,chromosome_name, len(seq)  ####### Good check to see if everything is rightly stored
                 if chromosome_name not in chromosome_sequence_dict:
                     chromosome_sequence_dict[chromosome_name] = seq
-
             seq = ""
-
             l = line.strip("\n").strip(">").split(" ")
             chromosome_name = l[0]
-
         else:
             seq = seq + line.strip("\n")
-
     chromosome_sequence_dict[chromosome_name] = seq
-
     stop = timeit.default_timer()
     logging.info('time to build sequence index %dsec', stop - start)
     # close gz & input_file_handle ?
     return chromosome_sequence_dict
+
 
 def load_chromosome_sequence_dict_from_fasta(fasta_uncompressed_filepath):
     '''
@@ -62,8 +57,6 @@ def load_chromosome_sequence_dict_from_fasta(fasta_uncompressed_filepath):
     :param fasta_uncompressed_filepath: "output/v_85/danio_rerio/Raw_data_files/Danio_rerio.GRCz10.dna.toplevel.fa"
     :return: dict { chromosome -> dna sequence }
     '''
-
-
     start = timeit.default_timer()
     buffer= StringIO()
     chromosome_sequence_dict = {}
@@ -92,6 +85,7 @@ def load_chromosome_sequence_dict_from_fasta(fasta_uncompressed_filepath):
     logging.info('time to build sequence index using StringIO on uncompressed fasta file %dsec', stop - start)
 
     return chromosome_sequence_dict
+
 
 def load_chromosome_sequence_dict_list(fasta_filepath):
     '''
@@ -135,6 +129,7 @@ def load_chromosome_sequence_dict_list(fasta_filepath):
 
     return chromosome_sequence_dict
 
+
 def test_read_gzip(fasta_filepath):
     start = timeit.default_timer()
     with gzip.open(fasta_filepath, "rb") as handle:
@@ -143,6 +138,7 @@ def test_read_gzip(fasta_filepath):
                 pass
     stop = timeit.default_timer()
     logging.info('test time on %s %dsec', fasta_filepath, stop - start)
+
 
 def test_read_gzip_buffer(fasta_filepath):
     c = 0

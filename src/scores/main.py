@@ -24,7 +24,7 @@ def prepare_output_directory(params):
 
 
 class Runner(object):
-    def __init__(self, params, output_file_descript="_scores.txt"):
+    def __init__(self, params, output_file_descript=".scores.txt"):
         self.output_file_path = prepare_output_directory(params)
         self.output_file_descript = output_file_descript
 
