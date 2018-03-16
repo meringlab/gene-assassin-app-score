@@ -1,9 +1,9 @@
 {
   "assembly": "WBcel235",
-  "ensembl_release": "v_85",
+  "ensembl_release": "v_90",
   "species_name": "caenorhabditis_elegans",
-  "transcript_cds_file_name": "transcript_cds_info_parsed_Caenorhabditis_elegans.WBcel235.85.gtf.txt",
+  "transcript_cds_file_name": "transcript_cds_info_parsed_Caenorhabditis_elegans.WBcel235.90.gtf.txt",
   "variation_file_name": "Caenorhabditis_elegans.gvf.gz",
-  "base_url_gtf": "rsync://ftp.ensembl.org/ensembl/pub/release-85/gtf/caenorhabditis_elegans/Caenorhabditis_elegans.WBcel235.85.gtf.gz",
-  "DNA_top_level_fa": "rsync://ftp.ensembl.org/ensembl/pub/release-85/fasta/caenorhabditis_elegans/dna/Caenorhabditis_elegans.WBcel235.dna.toplevel.fa.gz"
+  "base_url_gtf": "rsync://ftp.ensembl.org/ensembl/pub/release-90/gtf/caenorhabditis_elegans/Caenorhabditis_elegans.WBcel235.90.gtf.gz",
+  "DNA_top_level_fa": "rsync://ftp.ensembl.org/ensembl/pub/release-90/fasta/caenorhabditis_elegans/dna/Caenorhabditis_elegans.WBcel235.dna.toplevel.fa.gz"
 }

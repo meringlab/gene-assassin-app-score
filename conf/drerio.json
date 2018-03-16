@@ -1,11 +1,11 @@
 {
   "assembly": "GRCz10",
-  "ensembl_release": "v_85",
+  "ensembl_release": "v_90",
   "species_name": "danio_rerio",
   "exec_version": "v0",
-  "transcript_cds_file_name": "transcript_cds_info_parsed_Danio_rerio.GRCz10.85.gtf.txt",
+  "transcript_cds_file_name": "transcript_cds_info_parsed_Danio_rerio.GRCz10.90.gtf.txt",
   "variation_file_name": "Danio_rerio.gvf.gz",
-  "base_url_gtf": "rsync://ftp.ensembl.org/ensembl/pub/release-85/gtf/danio_rerio/Danio_rerio.GRCz10.85.gtf.gz",
-  "DNA_top_level_fa": "rsync://ftp.ensembl.org/ensembl/pub/release-85/fasta/danio_rerio/dna/Danio_rerio.GRCz10.dna.toplevel.fa.gz",
-  "GVF_file": "rsync://ftp.ensembl.org/ensembl/pub/release-85/variation/gvf/danio_rerio/Danio_rerio.gvf.gz"
+  "base_url_gtf": "rsync://ftp.ensembl.org/ensembl/pub/release-90/gtf/danio_rerio/Danio_rerio.GRCz10.90.gtf.gz",
+  "DNA_top_level_fa": "rsync://ftp.ensembl.org/ensembl/pub/release-90/fasta/danio_rerio/dna/Danio_rerio.GRCz10.dna.toplevel.fa.gz",
+  "GVF_file": "rsync://ftp.ensembl.org/ensembl/pub/release-90/variation/gvf/danio_rerio/Danio_rerio.gvf.gz"
 }
