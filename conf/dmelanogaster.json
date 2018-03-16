@@ -1,0 +1,11 @@
+{
+  "assembly": "BDGP6",
+  "ensembl_release": "v_90",
+  "species_name": "drosophila_melanogaster",
+  "exec_version": "v0",
+  "transcript_cds_file_name": "transcript_cds_info_parsed_Drosophila_melanogaster.BDGP6.90.gtf.txt",
+  "variation_file_name": "Drosophila_melanogaster.gvf.gz",
+  "DNA_top_level_fa": "rsync://ftp.ensembl.org/ensembl/pub/release-90/fasta/drosophila_melanogaster/dna/Drosophila_melanogaster.BDGP6.dna.toplevel.fa.gz",
+  "base_url_gtf": "rsync://ftp.ensembl.org/ensembl/pub/release-90/gtf/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.90.gtf.gz",
+  "GVF_file": "rsync://ftp.ensembl.org/ensembl/pub/release-90/variation/gvf/drosophila_melanogaster/Drosophila_melanogaster.gvf.gz"
+}

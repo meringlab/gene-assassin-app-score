@@ -1,0 +1,11 @@
+{
+  "assembly": "Gallus_gallus-5.0",
+  "ensembl_release": "v_90",
+  "species_name": "gallus_gallus",
+  "exec_version": "v0",
+  "transcript_cds_file_name": "transcript_cds_info_parsed_Gallus_gallus.Gallus_gallus-5.0.90.gtf.txt",
+  "variation_file_name": "Gallus_gallus.gvf.gz",
+  "DNA_top_level_fa": "rsync://ftp.ensembl.org/ensembl/pub/release-90/fasta/gallus_gallus/dna/Gallus_gallus.Gallus_gallus-5.0.dna.toplevel.fa.gz",
+  "base_url_gtf": "rsync://ftp.ensembl.org/ensembl/pub/release-90/gtf/gallus_gallus/Gallus_gallus.Gallus_gallus-5.0.90.gtf.gz",
+  "GVF_file": "rsync://ftp.ensembl.org/ensembl/pub/release-90/variation/gvf/gallus_gallus/Gallus_gallus.gvf.gz"
+}

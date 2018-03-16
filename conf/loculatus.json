@@ -1,0 +1,9 @@
+{
+  "assembly": "LepOcu1",
+  "ensembl_release": "v_90",
+  "species_name": "danio_rerio",
+  "exec_version": "v0",
+  "transcript_cds_file_name": "transcript_cds_info_parsed_Lepisosteus_oculatus.LepOcu1.90.gtf.txt",
+  "DNA_top_level_fa": "rsync://ftp.ensembl.org/ensembl/pub/release-90/fasta/lepisosteus_oculatus/dna/Lepisosteus_oculatus.LepOcu1.dna.toplevel.fa.gz",
+  "base_url_gtf": "rsync://ftp.ensembl.org/ensembl/pub/release-90/gtf/lepisosteus_oculatus/Lepisosteus_oculatus.LepOcu1.90.gtf.gz"
+}
