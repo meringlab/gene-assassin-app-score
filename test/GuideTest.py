@@ -26,6 +26,11 @@ class GuideTest(unittest.TestCase):
         self.assertEquals(full_tsv, g.to_tsv())
         self.assertGuideEqualExtra(Guide.from_full_tsv(g.to_tsv()), expected)
 
+    def test_parse_full_without_microhomology(self):
+        full_tsv = "ENSDARG00000000001	AGAAGAAGAGTCTTTCTGAGTGG	AGAAGAAGAGTCTTTCTGAG	9	34305562	34305582	-1	1	['ENSDARE00000000004']	['coding']	[68.0, 68.0]	[3.0, 3.0]	2	['ENSDART00000000004', 'ENSDART00000169788']	['7', '6']	None"
+        g = Guide.from_full_tsv(full_tsv)
+        self.assertFalse(g.microhomology_sequence)
+
     def test_pam(self):
         g = Guide()
         g.chromosome, g.start, g.end, g.strand = ('1', 28, 47, '1')
@@ -57,7 +62,6 @@ class GuideTest(unittest.TestCase):
         #     ngg_outcome = seq
         # else:
         #     ngg_outcome = "nan"
-
 
     def assertGuideEqualExtra(self, guide, values):
         self.assertEqual(values[0], guide.gene_id)

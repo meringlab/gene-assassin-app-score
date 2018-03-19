@@ -144,6 +144,8 @@ class Guide(object):
             if field in Guide.types and r[i] != 'nan':
                 r[i] = Guide.types[field](r[i])
             setattr(self, field, r[i])
+        if len(self.microhomology_sequence) < 60:
+            self.microhomology_sequence = None
 
     def to_tsv(self):
         return '\t'.join([str(getattr(self, f)) for f in Guide.full_info_fields_order])
@@ -169,7 +171,7 @@ class Guide(object):
         self.guide_exons = guide_exons
 
     def set_microhomology_sequence(self, guide_exons, sequence_dict):
-        self.microhomology_sequence = 'nan'
+        self.microhomology_sequence = None
         if guide_exons:
             self.microhomology_sequence = self.seq_for_microhomology_scoring(sequence_dict)
 
@@ -266,10 +268,23 @@ class Guide(object):
         return seq
 
     def seq_for_microhomology_scoring(self, chromosome_sequence_dict):
+        if self.start < 14:
+            logging.warning('cannot set microhomology sequence, guide too close to chromosome start %s', self)
+            return None
         sequence_start = self.start - 13
         sequence_end = self.end + 27
 
         chr_seq = chromosome_sequence_dict[self.chromosome]
+        if len(chr_seq) < sequence_end:
+            logging.warning('cannot set microhomology sequence, guide too close to chromosome end %s', self)
+            return None
+
+        subseq = chr_seq[sequence_start - 1:sequence_end]
+        # assert(len(subseq) == 60)
+        if len(subseq) != 60:
+            logging.error('failed to get microhomology sequence, %s', self)
+            return None
+
         if self.is_on_forward_strand():
-            return chr_seq[sequence_start - 1:sequence_end]
-        return self._reverse_complement(chr_seq[sequence_start - 1:sequence_end])
+            return subseq
+        return self._reverse_complement(subseq)

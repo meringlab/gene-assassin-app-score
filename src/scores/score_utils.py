@@ -441,6 +441,9 @@ def get_microhomology_out_of_frame_score(seq):
 
 
 def calculate_microhomology_score (seq):
+    if not seq:
+        return 'nan'
+
     microhomology_score, out_of_frame_score = get_microhomology_out_of_frame_score(seq)
 
     if out_of_frame_score == "nan":
