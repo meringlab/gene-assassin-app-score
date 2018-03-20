@@ -22,12 +22,12 @@ def make_guide_file_with_info(guide_file, output_file_path, sequence_dict, exon_
     logging.debug('gene: %s', gene_name)
 
     if gene_name not in exon_dict.gene_exons:  # NMD genes for example
-        logging.warning('not present in the parsed GTF %s', gene_name)
+        logging.warning('not present in the parsed GTF %s - %s', guide_file, gene_name)
 
     with open(guide_file) as f:
         records = f.readlines()
     if not records:
-        logging.warning('%s - empty guide file!?', guide_file)
+        logging.info('%s - empty guide file!?', guide_file)
         return
 
     logging.debug('%d guides for %s', len(records), guide_file)
@@ -66,6 +66,8 @@ def generate_guides(params, sequence_dict, output_directory, exon_dict):
     # for guide_file_path in ['ENSDARG00000100456.guides.txt']: # has single nucleotide exon
     # for guide_file_path in ['ENSG00000026036.guides.txt']: # NMD gene
     for guide_file_path in sorted(os.listdir(guides_directory)):
+        if not guide_file_path.endswith('.txt'):
+            continue
         inputfile = os.path.join(guides_directory, guide_file_path)
         make_guide_file_with_info(inputfile, output_directory, sequence_dict, exon_dict)
         progress.log()
