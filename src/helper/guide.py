@@ -228,7 +228,7 @@ class Guide(object):
             self.cds_stop_cutsite.extend(distance_feature[1])
 
     def __str__(self):
-        return '%s %s:%d-$d' % (self.strand, self.seq, self.start, self.end)
+        return '%s %s %s:%d-%d' % (self.seq, self.strand, self.chromosome, self.start, self.end)
 
     def __repr__(self):
         return self.__str__()
@@ -282,7 +282,8 @@ class Guide(object):
         subseq = chr_seq[sequence_start - 1:sequence_end]
         # assert(len(subseq) == 60)
         if len(subseq) != 60:
-            logging.error('failed to get microhomology sequence, %s', self)
+            logging.error('failed to get microhomology sequence,  %s, [%s][%d-%d]:', self.seq, self.chromosome,
+                          sequence_start, sequence_end)
             return None
 
         if self.is_on_forward_strand():
